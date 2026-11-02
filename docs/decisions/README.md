@@ -5,6 +5,8 @@
 
 | ID | 日付 | 判断 | 理由 | 関係ファイル |
 |---|---|---|---|---|
+| D-009 | 2026-11-02 | プランのアップグレードと Claude Platform の設定は、必要になった時点で実施（資料の STEP 0 から延期） | 現時点で不要な費用を避ける。契約前に公式で価格・条件を確認 | IMPLEMENTATION_PLAN.md |
+| D-008 | 2026-11-02 | Claude アカウントは新規作成せず、会社メールで作成済みの現アカウントを使用（資料の「新規専用アカウント」からの変更） | 運営者の方針。旧システム・旧DBとは連携しない | MASTER_PLAN.md, CLAUDE.md |
 | D-007 | 2026-11-02 | サービス責任者を提案: データ分析・測定→AI-D03、プロモーション制作・旅行商品・海外誘客→AI-D05（service.yaml に owner_status: proposed） | 資料に明記がなく、STEP 1 の承認に必要なため | services/, config/services.yaml, MASTER_PLAN.md |
 | D-006 | 2026-11-02 | escalate_to を役割 ID で統一（AI COO は AI-000。人間は役職名のまま） | 台帳の参照整合性を取るため | AI_ROLES.csv, 部長 AI の role.yaml |
 | D-005 | 2026-11-02 | Supabase プロジェクトの作成を STEP 2 開始時に延期（資料の STEP 1 からの変更） | DB を使うのは STEP 2 から。設計承認前の外部サービス登録を避ける | IMPLEMENTATION_PLAN.md, SYSTEM_ARCHITECTURE.md |
