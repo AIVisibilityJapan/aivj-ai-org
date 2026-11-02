@@ -9,3 +9,13 @@ per_run_limits:
 monthly_limits:
   claude_platform_usd: null
 exchange_rate_note: 資料は 1 ドル約 157 円換算（2026-10-23 時点の目安）
+
+# STEP 2 詳細設計で追加。null = 未設定。未設定の役割・案件は起動しない（fail closed）
+daily_limits:
+  max_cost_usd: null
+circuit_breaker:
+  consecutive_failures_to_stop_role: null
+approval:
+  ttl_hours: null
+human_queue:
+  max_pending_high_risk: null
