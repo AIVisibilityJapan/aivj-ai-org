@@ -1,0 +1,11 @@
+# 上限値は初期試験で現状を計測してから確定する（null = 未設定。未設定のまま本番稼働させない）
+initial_3_months:
+  target_total_jpy: {min: 100000, max: 150000}   # 資料の目標。保証ではない
+  note: 人件費・外部技術者費用・有料データ取得費・税金は含まない
+per_run_limits:
+  max_cost_usd: null
+  max_runtime_seconds: null
+  max_retries: null
+monthly_limits:
+  claude_platform_usd: null
+exchange_rate_note: 資料は 1 ドル約 157 円換算（2026-10-23 時点の目安）

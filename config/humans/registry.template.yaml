@@ -1,0 +1,46 @@
+# 人間の接続台帳（テンプレート）。実データは registry.yaml に作成する（.gitignore 済み・コミット禁止）。
+# 個人情報・契約金額・連絡先は Git に置かない。
+people:
+  - role: 代表取締役社長
+    scope: 経営方針・重要商談・契約／発注／支出の決裁・緊急停止
+    contract_party: null
+    contact: null
+    approval_authority: 全社
+    weekly_hour_cap: null
+    nda_signed: null
+    escalate_to: null
+  - role: 営業担当（業務委託）
+    scope: 商談・提案説明・顧客関係構築・条件調整
+    contract_party: null
+    contact: null
+    approval_authority: 商談条件の事前確認（最終は社長）
+    weekly_hour_cap: null
+    nda_signed: null
+    escalate_to: 社長
+  - role: 事業開発・品質担当（業務委託）
+    scope: 新商品の実用性評価・重要分析の人間レビュー（自身の開発案件は独立専門家が再審査）
+    contract_party: null
+    contact: null
+    approval_authority: 商品化・重要成果物の事前確認（最終は社長）
+    weekly_hour_cap: null
+    nda_signed: null
+    escalate_to: 社長
+  - role: 経営管理・総務担当（業務委託）
+    scope: 請求・入金／契約・証憑の確認、例外事務
+    contract_party: null
+    contact: null
+    approval_authority: 金額・証憑の確認（最終は社長）
+    weekly_hour_cap: null
+    nda_signed: null
+    escalate_to: 社長
+  - role: PM・外注管理担当（業務委託）
+    scope: 外注先との折衝、顧客・制作会社間の仕様／納期調整、顧客検収窓口
+    contract_party: null
+    contact: null
+    approval_authority: 仕様・納期調整（発注の最終は社長）
+    weekly_hour_cap: null
+    nda_signed: null
+    escalate_to: 社長
+external_advisors:   # 上記 5 名には含めない
+  - {role: 外部技術顧問, scope: AI システム設計審査・重大障害・セキュリティ対応}
+  - {role: 弁護士・税理士・社労士等, scope: 契約・税務・雇用判断などの専門判断}

@@ -1,0 +1,12 @@
+.env
+.env.*
+!.env.example
+config/humans/registry.yaml
+data/private/
+node_modules/
+__pycache__/
+*.log
+.DS_Store
+.supabase/
+dist/
+coverage/

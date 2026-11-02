@@ -1,0 +1,13 @@
+# このファイルは複製せず更新する
+name: AIO
+slug: 03-aio
+business_type: 継続運用型
+owner_role: AI-D04
+owner_status: per_source（資料の記載どおり）
+in_house_ai: AI 回答・引用元の診断、情報設計、FAQ・文章改善
+outsourced: サイトの技術改修
+kpis: []
+pricing: null
+acceptance_criteria: null
+sop: []
+notes: 成果（AI 推薦の増加等）は保証しない表現を使う

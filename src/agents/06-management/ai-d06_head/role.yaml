@@ -1,0 +1,26 @@
+# 役割定義。全体一覧の正本は docs/design/AI_ROLES.csv
+role_id: "AI-D06"
+role_name: "経営管理部長 AI"
+type: "部長 AI"
+dept_code: "D06"
+dept: "経営管理部"
+section: null
+unit: null
+service_responsibility: null
+max_risk_tier: "high"
+human_checkpoint: "請求・契約は総務担当確認/重大品質問題は社長へ直接報告"
+escalate_to: "AI-000"
+build_step: "STEP4"
+pilot: false
+impl_status: "not_implemented"
+
+# 以下は build_step の段階で具体化する（未定義のまま実装しない）
+definition:
+  purpose: null
+  trigger: null
+  inputs: []
+  outputs: []
+  tools: []
+  permissions: []
+  stop_conditions: []
+  evaluation: []

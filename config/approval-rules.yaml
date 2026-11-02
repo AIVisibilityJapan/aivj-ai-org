@@ -1,0 +1,12 @@
+# 人間の承認が必須の行為。役割別の担当割当は実装時に具体化する。
+# 承認なしで実行できる経路を作らない（承認前は実行を禁止）。
+actions:
+  - {action: 契約締結,                 precheck: 経営管理・総務担当,       final_approver: 社長}
+  - {action: 発注・仕様変更,           precheck: PM・外注管理担当,         final_approver: 社長}
+  - {action: 新規支出,                 precheck: 担当者,                   final_approver: 社長}
+  - {action: 顧客への確約・値引き・契約条件変更, precheck: 営業担当,       final_approver: 社長}
+  - {action: 重要な対外送信・重要提案, precheck: 営業担当,                 final_approver: 社長}
+  - {action: 権限の付与・拡大,         precheck: AI システム部,            final_approver: 社長}
+  - {action: AI 社員の本番反映,        precheck: AI システム部,            final_approver: 社長}
+  - {action: 顧客秘密情報の取扱い開始, precheck: 経営管理・総務担当,       final_approver: 社長}
+  - {action: 重要な新商品・新手法の採用, precheck: 事業開発・品質担当,     final_approver: 社長, note: 自身の開発案件は外部専門家が独立レビュー}

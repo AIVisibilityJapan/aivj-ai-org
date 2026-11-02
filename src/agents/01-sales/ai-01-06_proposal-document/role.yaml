@@ -1,0 +1,26 @@
+# 役割定義。全体一覧の正本は docs/design/AI_ROLES.csv
+role_id: "AI-01-06"
+role_name: "提案資料制作 AI"
+type: "係担当 AI"
+dept_code: "D01"
+dept: "営業部"
+section: "企画提案課"
+unit: "提案書・見積作成係"
+service_responsibility: null
+max_risk_tier: "mid"
+human_checkpoint: "外部送信・見積提示は人間確認/重要条件は社長承認"
+escalate_to: "AI-D01"
+build_step: "STEP6"
+pilot: false
+impl_status: "not_implemented"
+
+# 以下は build_step の段階で具体化する（未定義のまま実装しない）
+definition:
+  purpose: null
+  trigger: null
+  inputs: []
+  outputs: []
+  tools: []
+  permissions: []
+  stop_conditions: []
+  evaluation: []

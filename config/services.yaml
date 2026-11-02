@@ -1,0 +1,86 @@
+# サービスカタログ（資料 §2。個別定義は services/ 配下）。このファイルは複製せず更新する
+services:
+- slug: 01-aiv
+  name: AIV
+  type: 分析・レポート型
+  in_house: 地域・施設・サイトの可視性測定／競合・多言語比較
+  outsourced: 原則なし
+  owner_role: AI-D03
+  owner_status: per_source
+- slug: 02-ai-search-demand
+  name: AI 検索需要分析
+  type: 分析・レポート型
+  in_house: 質問需要・属性・テーマ・市場機会分析
+  outsourced: 外部データ基盤の調達
+  owner_role: AI-D03
+  owner_status: per_source
+- slug: 03-aio
+  name: AIO
+  type: 継続運用型
+  in_house: AI 回答・引用元の診断、情報設計、FAQ・文章改善
+  outsourced: サイトの技術改修
+  owner_role: AI-D04
+  owner_status: per_source
+- slug: 04-seo
+  name: SEO（自然検索）
+  type: 継続運用型
+  in_house: 検索需要・技術診断・記事／順位・流入改善
+  outsourced: 技術実装・大規模改修
+  owner_role: AI-D04
+  owner_status: per_source
+- slug: 05-meo-gbp
+  name: MEO・GBP
+  type: 継続運用型
+  in_house: GBP 診断・改善方針・権限取得後の遠隔運用
+  outsourced: セミナー・対面登録／初期支援
+  owner_role: AI-D04
+  owner_status: per_source
+- slug: 06-digital-ads
+  name: デジタル広告
+  type: 継続運用型
+  in_house: 企画・配信設定・運用・効果分析
+  outsourced: 動画・高度な広告素材制作
+  owner_role: AI-D04
+  owner_status: per_source
+- slug: 07-sns-crm
+  name: SNS・CRM
+  type: 継続運用型
+  in_house: 投稿企画・原稿・運用・分析・顧客施策
+  outsourced: 撮影・編集・高度なデザイン
+  owner_role: AI-D04
+  owner_status: per_source
+- slug: 08-data-analytics
+  name: データ分析・測定
+  type: 分析・レポート型（想定）
+  in_house: 観光統計・行動／CV・KPI 分析・レポート
+  outsourced: 現地／対面調査
+  owner_role: AI-D03
+  owner_status: proposed
+- slug: 09-web-production
+  name: Web サイト制作
+  type: 外注統括型
+  in_house: AIV・需要分析、AIO／SEO 要件、公開後検証
+  outsourced: デザイン・構築・CMS・改修
+  owner_role: AI-D05
+  owner_status: per_source
+- slug: 10-tourism-strategy
+  name: 観光戦略
+  type: 外注統括型
+  in_house: データ分析・市場把握・AI 検索分析
+  outsourced: 戦略策定・専門家業務
+  owner_role: AI-D05
+  owner_status: per_source
+- slug: 11-promotion-production
+  name: プロモーション制作
+  type: 外注統括型
+  in_house: 訴求分析・企画・デジタル配信・検証
+  outsourced: 動画・デザイン・現場 PR
+  owner_role: AI-D05
+  owner_status: proposed
+- slug: 12-travel-products-inbound
+  name: 旅行商品・海外誘客
+  type: 外注統括型
+  in_house: 市場／国別分析、運用可能なデジタル施策
+  outsourced: 造成・販売・現地営業・招請
+  owner_role: AI-D05
+  owner_status: proposed
