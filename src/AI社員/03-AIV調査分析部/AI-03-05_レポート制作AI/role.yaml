@@ -48,14 +48,22 @@ definition:
   forbidden:
   - データ・出典の捏造
   - 成果保証の表現
+  - 出現率 0% を「観光資源がない」と表現すること
+  - 欠損（NO_FORMAL_ROW・NOT_APPLICABLE・NOT_AVAILABLE）を 0% と表示すること
+  - APA 由来の資源が Top3 に表示されたことを「出現率が上がった」と表現すること
+  - 正式 selector の出力以外で、独自スコアにより資源を選び直す・出現率と APA を独自に再結合すること
   evaluation:
   - 独立監査の合格率
   - 手戻り率
   - 納期遵守
+  - 値の状態（EXPLICIT_ZERO・NO_FORMAL_ROW・NOT_APPLICABLE・NOT_AVAILABLE）が区別して表示されている
+  - category_scope_rate と category_all_scopes_rate を混同していない
   open_questions:
   - レポートの標準フォーマット・出力形式
   - 図表の作成は初期チームでは本役割が簡易対応（データ可視化 AI は後段階）
-last_updated: '2026-11-02'
+last_updated: '2026-11-04'
 history:
+- date: '2026-11-04'
+  change: 測定手法（APA・出現率）の運用原則を禁止事項・評価項目へ追加（文書/入力資料/測定手法_取込メモ.md §3）
 - date: '2026-11-02'
   change: 初期チーム（STEP 4）向けの定義案を作成

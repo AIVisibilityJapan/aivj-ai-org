@@ -41,8 +41,8 @@
 | 2-0 | 実行基盤・DB・API の検討（無料でできるか。SYSTEM_ARCHITECTURE §9 の項目） | **完了（2026-11-04）**: API・Supabase・Managed Agents は使わず、Claude Code（Pro）の非対話実行＋ファイル管理で進める。判断ログ D-025 |
 | 2-1 | DB の作成（§3 のテーブル、RLS） | **後回し（D-025）**: 今必要な要素が見えるまで着手しない。当面はファイルで管理 |
 | 2-2 | 役割台帳の取込と整合検証（AI_ROLES.csv・role.yaml・config） | **完了（2026-11-04）**: src/shared/role_registry.py、scripts/validate_roles.py、tests/unit/test_role_registry.py（試験 12 件合格） |
-| 2-3 | タスクエンジン（冪等キー、リース、依存、再試行上限） | src/orchestrator/ |
-| 2-4 | 上限・停止機構（limits、kill_switch、サーキットブレーカー） | src/orchestrator/guards, src/shared/ |
+| 2-3 | タスクエンジン（冪等キー、リース、依存、再試行上限） | **完了（2026-11-04）**: src/orchestrator/task_engine.py（ファイル管理方式。依存関係は未実装＝2-6 で必要になった時点で追加） |
+| 2-4 | 上限・停止機構（limits、kill_switch、サーキットブレーカー） | **完了（2026-11-04）**: task_engine.py に連続失敗の自動停止・費用ガード・停止ログ、scripts/stop_control.py（緊急停止・再開・状態表示）。上限は設定/budgets.yaml が null のため、数値が入るまで本番では起動しない |
 | 2-5 | 承認キュー・人間キュー | src/orchestrator/, DB |
 | 2-6 | AI COO v0（受付・分解・割当・監視・例外・報告）。まずダミー役割 2 つで通す | src/orchestrator/ |
 | 2-7 | 管理画面（無料の範囲で、案件・会社全体を一覧で把握できるもの。置き場所は事前に比較） | src/admin-ui/ |
@@ -129,6 +129,7 @@ Max 5x 約4.7万円 / API・DB等 約2〜5万円 / 予備 約3〜5万円 → 目
 
 | 日付 | 変更 |
 |---|---|
+| 2026-11-04 | 2-3（タスクエンジン）・2-4（自動停止・緊急停止・費用ガード）を完了 |
 | 2026-11-04 | 試験題材を南紀白浜観光協会サイトに変更（D-030）。T3-06 の文言を修正 |
 | 2026-11-04 | STEP 3 の方針（D-028, D-029）と試験項目（T3-01〜14）を追加 |
 | 2026-11-04 | 2-0 を完了（API・Supabase・Managed Agents を使わない方針）、2-1（DB）を後回し、2-2（台帳の取込・整合検証）を完了 |

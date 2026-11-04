@@ -11,7 +11,7 @@ sys.path.insert(0, str(ROOT / "src" / "shared"))
 import task_engine as te  # noqa: E402
 import role_registry as rr  # noqa: E402
 
-OK = {"max_retries": 2, "max_runtime_seconds": 300}
+OK = {"max_retries": 2, "max_runtime_seconds": 300, "consecutive_failures_to_stop_role": 5, "max_cost_usd": 0}
 
 
 class Clock:
@@ -60,15 +60,15 @@ class TestEngine(Base):
         self.assertIsNone(self.eng.claim("w"))                       # 上限超過後は再取得されない
 
     def test_fail_closed_when_limits_unset(self):
-        for lim in ({"max_retries": None, "max_runtime_seconds": 300},
-                    {"max_retries": 2, "max_runtime_seconds": None}, {}, {"max_retries": True, "max_runtime_seconds": 5}):
+        for lim in ({**OK, "max_retries": None}, {**OK, "max_runtime_seconds": None},
+                    {**OK, "consecutive_failures_to_stop_role": None}, {}, {**OK, "max_retries": True}):
             e = te.TaskEngine(self._tmp.name, lim, clock=self.clock)
             with self.assertRaises(te.EngineError): e.claim("w")
 
     def test_stop_and_resume(self):
         self.eng.submit("K1", "AI-000"); self.eng.stop("AI-000")
         self.assertIsNone(self.eng.claim("w"))
-        self.eng.resume("AI-000"); self.assertIsNotNone(self.eng.claim("w"))
+        self.eng.resume("AI-000", actor="社長"); self.assertIsNotNone(self.eng.claim("w"))
         self.eng.stop("all")
         self.eng.submit("K2", "AI-000"); self.assertIsNone(self.eng.claim("w2"))
 
@@ -92,6 +92,68 @@ class TestEngine(Base):
         with self.assertRaises(te.EngineError): self.eng.submit("../x", "AI-000")
 
 
+class TestGuards(Base):
+    def _engine(self, **over):
+        return te.TaskEngine(self._tmp.name, {**OK, **over}, clock=self.clock)
+
+    def test_auto_stop_after_consecutive_failures(self):
+        eng = self._engine(consecutive_failures_to_stop_role=2, max_retries=9)
+        eng.submit("K1", "AI-X"); eng.submit("K2", "AI-X")
+        for _ in range(2):
+            t = eng.claim("w"); eng.fail(t["task_id"], "w", "失敗")
+        self.assertIn("AI-X", eng.stopped())
+        self.assertIsNone(eng.claim("w"))                     # 停止後は取得できない
+        self.assertEqual(eng.stop_log()[-1]["event"], "auto_stop")
+
+    def test_success_resets_streak(self):
+        eng = self._engine(consecutive_failures_to_stop_role=2, max_retries=9)
+        for k in ("K1", "K2", "K3"): eng.submit(k, "AI-X")
+        t = eng.claim("w"); eng.fail(t["task_id"], "w", "x")
+        t = eng.claim("w"); eng.complete(t["task_id"], "w")      # 成功でリセット
+        t = eng.claim("w"); eng.fail(t["task_id"], "w", "x")
+        self.assertNotIn("AI-X", eng.stopped())
+
+    def test_roles_are_independent(self):
+        eng = self._engine(consecutive_failures_to_stop_role=1, max_retries=9)
+        eng.submit("K1", "AI-A"); eng.submit("K2", "AI-B")
+        t = eng.claim("w"); eng.fail(t["task_id"], "w", "x")
+        self.assertEqual(eng.stopped(), {t["role_id"]})
+        self.assertIsNotNone(eng.claim("w"))                   # 別の役割は動く
+
+    def test_resume_requires_actor_and_is_logged(self):
+        eng = self._engine()
+        eng.stop("all", actor="社長", reason="緊急")
+        with self.assertRaises(te.EngineError): eng.resume("all", actor="")
+        with self.assertRaises(te.EngineError): eng.resume("D07", actor="社長")   # 停止中でない
+        eng.resume("all", actor="社長", reason="確認済み")
+        self.assertEqual([e["event"] for e in eng.stop_log()], ["stop", "resume"])
+        self.assertEqual(eng.stop_log()[0]["reason"], "緊急")
+
+    def test_resume_resets_streak(self):
+        eng = self._engine(consecutive_failures_to_stop_role=1, max_retries=9)
+        eng.submit("K1", "AI-X"); t = eng.claim("w"); eng.fail(t["task_id"], "w", "x")
+        eng.resume("AI-X", actor="社長")
+        eng.submit("K2", "AI-X"); self.assertIsNotNone(eng.claim("w"))
+
+    def test_cost_zero_ok_positive_stops_when_unset(self):
+        eng = self._engine(max_cost_usd=None)
+        eng.submit("K1", "AI-X"); t = eng.claim("w")
+        self.assertEqual(eng.record_cost(t["task_id"], "w", 0)["status"], te.RUNNING)
+        r = eng.record_cost(t["task_id"], "w", 0.01)             # 上限未設定で費用発生 → 停止
+        self.assertEqual(r["status"], te.FAILED); self.assertIn("AI-X", eng.stopped())
+
+    def test_cost_over_limit_stops(self):
+        eng = self._engine(max_cost_usd=1.0)
+        eng.submit("K1", "AI-X"); t = eng.claim("w")
+        self.assertEqual(eng.record_cost(t["task_id"], "w", 0.6)["status"], te.RUNNING)
+        r = eng.record_cost(t["task_id"], "w", 0.6)              # 累計 1.2 > 1.0
+        self.assertEqual(r["status"], te.FAILED); self.assertEqual(eng.total_cost(), 1.2)
+
+    def test_stop_state_survives_restart(self):
+        self._engine().stop("AI-X")
+        self.assertEqual(self._engine().stopped(), {"AI-X"})
+
+
 class TestWithRegistry(Base):
     def test_only_implemented_roles_assigned(self):
         roles, errs, _ = rr.validate(ROOT)
@@ -100,6 +162,18 @@ class TestWithRegistry(Base):
         eng.submit("K1", "AI-000")              # 台帳上は definition_drafted → 割当不可
         eng.submit("K2", "AI-9999")             # 台帳にない
         self.assertIsNone(eng.claim("w"))
+
+
+class TestStopControlCli(Base):
+    def test_cli(self):
+        sys.path.insert(0, str(ROOT / "scripts"))
+        import stop_control as sc
+        d = ["--state-dir", self._tmp.name]
+        self.assertEqual(sc.main(["stop", "all", "--reason", "緊急"] + d), 0)
+        self.assertEqual(sc.main(["resume", "all"] + d), 1)                      # 実行者なしは拒否
+        self.assertEqual(sc.main(["resume", "all", "--actor", "社長"] + d), 0)
+        self.assertEqual(sc.main(["status"] + d), 0)
+        self.assertEqual(sc.main(["stop"] + d), 2)
 
 
 if __name__ == "__main__":

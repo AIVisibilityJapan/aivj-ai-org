@@ -4,6 +4,9 @@
 - 二重実行防止: 受付時は冪等キー、取得時は排他ロック（O_EXCL）。
 - 再試行: 上限は設定から渡す。未設定（None）なら起動拒否（fail closed）。
 - 停止: 停止指定ファイル（all / 部コード / role_id）。停止中は取得できない。
+- 緊急停止・自動停止（2-4）: 手動停止／再開は実行者と理由を停止ログに残す（再開は実行者必須）。
+  役割ごとの連続失敗が上限に達すると自動で停止する。成功で連続失敗はリセット。
+  費用が発生した場合は、上限が未設定または超過のとき役割を停止する（費用は都度社長確認）。
 - 承認が必要なタスクは awaiting_approval で止め、承認されるまで取得できない（2-5 で接続）。
 - 割当可否は role_registry.assignability に従う。
 標準ライブラリのみ。実行状態は Git に置かない（.gitignore: データ/実行状態/）。
@@ -85,13 +88,56 @@ class TaskEngine:
         with open(p, encoding="utf-8") as f:
             return set(json.load(f))
 
-    def stop(self, target: str) -> None:
-        """target: 'all' / 部コード（例 D07）/ role_id。"""
-        s = self.stopped() | {target}
-        self._write_stop(s)
+    def stop(self, target: str, actor: str = "社長", reason: str = "") -> None:
+        """target: 'all' / 部コード（例 D07）/ role_id。緊急停止は実行者・理由を記録する。"""
+        self._write_stop(self.stopped() | {target})
+        self._stop_log("stop", target, actor, reason)
 
-    def resume(self, target: str) -> None:
+    def resume(self, target: str, actor: str, reason: str = "") -> None:
+        """再開は実行者の記録が必須（停止・再開の権限者は都度確認。Q-09）。"""
+        if not actor or not actor.strip():
+            raise EngineError("再開には実行者の記録が必要です")
+        if target not in self.stopped():
+            raise EngineError(f"停止中ではありません: {target}")
         self._write_stop(self.stopped() - {target})
+        if target in self._read_json("連続失敗.json", {}):
+            self._update_streak(target, reset=True)
+        self._stop_log("resume", target, actor, reason)
+
+    def _stop_log(self, event: str, target: str, actor: str, reason: str) -> None:
+        with open(self.dir / "停止ログ.jsonl", "a", encoding="utf-8") as f:
+            f.write(json.dumps({"at": self.clock(), "event": event, "target": target,
+                                "actor": actor, "reason": reason}, ensure_ascii=False) + "\n")
+
+    def stop_log(self) -> list[dict]:
+        p = self.dir / "停止ログ.jsonl"
+        if not p.exists():
+            return []
+        with open(p, encoding="utf-8") as f:
+            return [json.loads(x) for x in f if x.strip()]
+
+    def _read_json(self, name: str, default):
+        p = self.dir / name
+        if not p.exists():
+            return default
+        with open(p, encoding="utf-8") as f:
+            return json.load(f)
+
+    def _update_streak(self, role_id: str, reset: bool = False) -> int:
+        d = self._read_json("連続失敗.json", {})
+        d[role_id] = 0 if reset else d.get(role_id, 0) + 1
+        tmp = (self.dir / "連続失敗.json").with_suffix(".tmp")
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(d, f, ensure_ascii=False)
+        os.replace(tmp, self.dir / "連続失敗.json")
+        return d[role_id]
+
+    def _auto_stop_if_needed(self, t: dict, reason: str) -> None:
+        n = self._update_streak(t["role_id"])
+        if n >= self.limits["consecutive_failures_to_stop_role"]:
+            self._write_stop(self.stopped() | {t["role_id"]})
+            self._stop_log("auto_stop", t["role_id"], "自動停止",
+                           f"連続失敗 {n} 回: {reason}")
 
     def _write_stop(self, s: set[str]) -> None:
         tmp = self._stop_file().with_suffix(".tmp")
@@ -127,9 +173,10 @@ class TaskEngine:
 
     # ---- 実行 ----
     def _check_limits(self) -> None:
-        for k in ("max_retries", "max_runtime_seconds"):
+        for k in ("max_retries", "max_runtime_seconds", "consecutive_failures_to_stop_role"):
             v = self.limits.get(k)
-            if not isinstance(v, int) or isinstance(v, bool) or v < 0 or (k == "max_runtime_seconds" and v == 0):
+            if (not isinstance(v, int) or isinstance(v, bool) or v < 0
+                    or (k != "max_retries" and v == 0)):
                 raise EngineError(f"上限が未設定のため起動しません: {k}")
 
     def _lock(self, task_id: str):
@@ -185,6 +232,7 @@ class TaskEngine:
         t.update(status=SUCCEEDED, result=result, lease_until=None)
         self._log(t, "succeeded")
         self._save(t)
+        self._update_streak(t["role_id"], reset=True)
         return t
 
     def fail(self, task_id: str, worker: str, reason: str) -> dict:
@@ -198,7 +246,29 @@ class TaskEngine:
             t["status"] = QUEUED
             self._log(t, "retry_scheduled", reason)
         self._save(t)
+        self._auto_stop_if_needed(t, reason)
         return t
+
+    def record_cost(self, task_id: str, worker: str, usd: float) -> dict:
+        """実行で発生した費用を記録する。費用 0 は記録のみ。0 を超える場合は、
+        max_cost_usd が未設定、または 1 件の費用／累計が上限を超えるとき、役割を停止してタスクを失敗にする。"""
+        t = self._running(task_id, worker)
+        t["cost_usd"] = round(t.get("cost_usd", 0.0) + usd, 6)
+        self._log(t, "cost", f"{usd} USD")
+        limit = self.limits.get("max_cost_usd")
+        if t["cost_usd"] > 0 and (not isinstance(limit, (int, float)) or isinstance(limit, bool)
+                                  or t["cost_usd"] > limit):
+            t["status"], t["lease_until"] = FAILED, None
+            self._log(t, "failed", "費用の上限超過または上限未設定（社長確認が必要）")
+            self._save(t)
+            self._write_stop(self.stopped() | {t["role_id"]})
+            self._stop_log("auto_stop", t["role_id"], "自動停止", f"費用 {t['cost_usd']} USD（上限 {limit}）")
+            return t
+        self._save(t)
+        return t
+
+    def total_cost(self) -> float:
+        return round(sum(t.get("cost_usd", 0.0) for t in self.all_tasks()), 6)
 
     def _running(self, task_id: str, worker: str) -> dict:
         t = self.get(task_id)
