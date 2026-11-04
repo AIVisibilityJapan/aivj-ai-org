@@ -1,9 +1,9 @@
 """バックアップと復元（STEP 2 / 2-9, T2-14）。標準ライブラリのみ。外部へは送らない。
 
-  py scripts/backup_state.py backup  --dest D:\\backup            実行状態・設定の個人別ファイルを zip に保存
-  py scripts/backup_state.py backup  --dest D:\\backup --with-private   データ\\private も含める（顧客情報を含む）
-  py scripts/backup_state.py verify  --file D:\\backup\\xxx.zip     zip が壊れていないか・改ざんされていないか確認
-  py scripts/backup_state.py restore --file D:\\backup\\xxx.zip --to C:\\dev\\restore_test   空のフォルダへ復元（上書きしない）
+  py scripts/backup_state.py backup  --dest C:\\aivj_backup            実行状態・設定の個人別ファイルを zip に保存
+  py scripts/backup_state.py backup  --dest C:\\aivj_backup --with-private   データ\\private も含める（顧客情報を含む）
+  py scripts/backup_state.py verify  --file C:\\aivj_backup\\xxx.zip     zip が壊れていないか・改ざんされていないか確認
+  py scripts/backup_state.py restore --file C:\\aivj_backup\\xxx.zip --to C:\\dev\\restore_test   空のフォルダへ復元（上書きしない）
 
 - 保存先は必ず指定する（未指定は拒否）。保存先がリポジトリの中にある場合は拒否する（Git に載るのを防ぐ）。
 - zip の中に各ファイルの SHA-256 を書いた台帳（manifest.json）を入れ、復元時に全ファイルを照合する。
@@ -148,6 +148,8 @@ def main(argv=None) -> int:
             print(f"復元しました: {restore(a.file, a.to)} ファイル → {a.to}")
     except BackupError as e:
         print(f"エラー: {e}"); return 1
+    except OSError as e:
+        print(f"エラー: ファイルまたはフォルダを操作できません（{e.strerror or type(e).__name__}）。保存先のドライブ・パス・権限を確認してください"); return 1
     return 0
 
 

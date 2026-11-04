@@ -112,6 +112,9 @@ class Backup(unittest.TestCase):
 
     def test_cli(self):
         self.assertEqual(bs.main(["backup"]), 1)
+        blocker = self.tmp / "file.txt"
+        blocker.write_text("x", encoding="utf-8")
+        self.assertEqual(bs.main(["backup", "--dest", str(blocker / "sub")]), 1)   # 作れない保存先でも説明つきで終わる
         self.assertEqual(bs.main(["verify", "--file", str(self.tmp / "none.zip")]), 1)
 
 
