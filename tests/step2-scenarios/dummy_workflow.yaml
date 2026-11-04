@@ -1,0 +1,17 @@
+# 試験用のダミー工程（Q-05: 実装対象は AI COO とダミー役割のみ）。実在の業務ではない。
+workflows:
+  dummy-a-to-b:
+    description: ダミー工程 A → B（T2-01）
+    steps:
+      - {id: A, role: DUMMY-A, risk: low}
+      - {id: B, role: DUMMY-B, risk: low, depends_on: [A]}
+  dummy-high-risk:
+    description: 高リスク工程（T2-03）。B は社長承認が必要
+    steps:
+      - {id: A, role: DUMMY-A, risk: low}
+      - {id: B, role: DUMMY-B, risk: high, depends_on: [A], action: AI 社員の本番反映}
+  dummy-failing:
+    description: 必ず失敗する工程（T2-04, T2-08, T2-09）
+    steps:
+      - {id: A, role: DUMMY-FAIL, risk: low}
+      - {id: B, role: DUMMY-B, risk: low, depends_on: [A]}

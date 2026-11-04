@@ -20,9 +20,9 @@ import time
 import uuid
 from pathlib import Path
 
-QUEUED, RUNNING, SUCCEEDED, FAILED, STOPPED, AWAITING = (
-    "queued", "running", "succeeded", "failed", "stopped", "awaiting_approval")
-TERMINAL = {SUCCEEDED, FAILED, STOPPED}
+QUEUED, RUNNING, SUCCEEDED, FAILED, STOPPED, AWAITING, BLOCKED = (
+    "queued", "running", "succeeded", "failed", "stopped", "awaiting_approval", "blocked")
+TERMINAL = {SUCCEEDED, FAILED, STOPPED, BLOCKED}
 
 
 class EngineError(Exception):
@@ -147,7 +147,7 @@ class TaskEngine:
 
     # ---- 受付 ----
     def submit(self, idempotency_key: str, role_id: str, payload: dict | None = None,
-               requires_approval: bool = False) -> dict:
+               requires_approval: bool = False, depends_on: list | None = None) -> dict:
         """同じ冪等キーは同じタスクを返す（重複作成しない）。"""
         _safe(idempotency_key)
         for t in self.all_tasks():
@@ -156,7 +156,8 @@ class TaskEngine:
         t = {"task_id": "T-" + uuid.uuid4().hex[:12], "idempotency_key": idempotency_key,
              "role_id": role_id, "payload": payload or {}, "attempts": 0,
              "status": AWAITING if requires_approval else QUEUED, "created": self.clock(),
-             "lease_until": None, "worker": None, "result": None, "history": []}
+             "lease_until": None, "worker": None, "result": None, "history": [],
+             "depends_on": list(depends_on or [])}
         self._log(t, "submitted", "承認待ち" if requires_approval else "")
         self._save(t)
         return t
@@ -197,6 +198,14 @@ class TaskEngine:
             reason = self._blocked(t, stopped)
             if reason:
                 continue
+            dep = self._dependency_state(t)
+            if dep == "failed":
+                t["status"] = BLOCKED
+                self._log(t, "blocked", "依存するタスクが失敗・停止・ブロックのため")
+                self._save(t)
+                continue
+            if dep == "waiting":
+                continue
             lock = self._lock(t["task_id"])
             if lock is None:
                 continue
@@ -214,6 +223,27 @@ class TaskEngine:
             finally:
                 os.unlink(lock)
         return None
+
+    def _dependency_state(self, t: dict) -> str:
+        """'ready'（依存なしまたはすべて成功）／'waiting'（未完了あり）／'failed'（失敗・停止・ブロックあり）。"""
+        states = [self.get(d)["status"] for d in t.get("depends_on", [])]
+        if any(x in (FAILED, STOPPED, BLOCKED) for x in states):
+            return "failed"
+        return "ready" if all(x == SUCCEEDED for x in states) else "waiting"
+
+    def block(self, task_id: str, reason: str) -> dict:
+        """割当不可などで実行できないタスクをブロックする（実行中は不可）。"""
+        t = self.get(task_id)
+        if t["status"] in (RUNNING,) or t["status"] in TERMINAL:
+            raise EngineError(f"ブロックできない状態: {t['status']}")
+        t["status"] = BLOCKED
+        self._log(t, "blocked", reason)
+        self._save(t)
+        return t
+
+    def blocked_reason(self, t: dict) -> str | None:
+        """停止中・未実装・台帳にない役割ならその理由。実行できるなら None。"""
+        return self._blocked(t, self.stopped())
 
     def _blocked(self, t: dict, stopped: set[str]) -> str | None:
         if self.roles is not None:
