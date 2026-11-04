@@ -1,0 +1,18 @@
+# 自社表記の正本（自社サイト https://aivj.co.jp/ の記載、2026-11-05 確認）。監査の検査器が読む。
+# 変更は 文書/判断ログ に残す。電話・メールはサイトから確認できなかったため unverified（合否判定に使わない）。
+association_name: 一般社団法人AI検索可視性標準化協会
+# 協会名の正しくない表記（完成品に出ていたもの）。見つけたら不一致にする
+association_wrong_forms:
+  - AI 可視性標準化協会
+  - AI可視性標準化協会
+address_building: ヒルトンプラザウエスト
+address_wrong_forms:
+  - ヒルトンプラサウ工スト
+  - ヒルトンプラザウ工スト
+  - ヒルトンプラサウエスト
+company_name: AI Visibility Japan株式会社
+company_name_status: 全角空白入り「AI Visibility Japan　株式会社」は要確認（社長）
+unverified:
+  - TEL 06-7777-6718
+  - E-mail info@aivj.co.jp
+ai_names_allowed: [ChatGPT, Gemini, Claude, Google AI モード, AI Overviews]
