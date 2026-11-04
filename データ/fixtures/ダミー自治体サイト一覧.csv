@@ -1,0 +1,5 @@
+dummy_id,自治体名（架空）,サイトURL（架空）,観光ページの有無,備考
+DM-001,あおば市,https://example.invalid/aoba/,あり,英語ページあり
+DM-002,しらさぎ町,https://example.invalid/shirasagi/,なし,観光情報はトップページの一部のみ
+DM-003,みなと村,https://example.invalid/minato/,あり,日本語のみ
+DM-004,かげろう市,https://example.invalid/kagero/,不明,試験用: 判定不能ケース
