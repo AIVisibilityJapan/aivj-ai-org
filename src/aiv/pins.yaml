@@ -1,0 +1,13 @@
+# 地域 AIV 分析 AI（AI-03-01）が読んでよい正式データの固定（版・SHA）。一致しなければ止まる（fail closed）。
+# 値ファイルの SHA は、公開マニフェストに載っていないため、2026-11-05 の取込時にこちらで記録したもの（D-037 の基準版）。
+report_values:
+  file: report_values_s1550_38.json
+  sha256: a78e1bbdde1311d18b5a413abd7a84e723769e8940336a3c121a49454411a534
+  selector: "1.5.50"          # 公開マニフェスト（2026-10-28）の版。個別レコードの版は 1.5.49 と 1.5.50 が混在（資源を追加した 3 自治体が 1.5.50）
+manifest:
+  file: formal_release_manifest.json
+  sha256: null                # 未記録（初回の読み取りで記録し、承認後に固定する）
+population:
+  appearance: 1741            # 出現率の集計単位（自治体数）
+  apa_rank: 1719              # 自治体ランキングの集計単位
+  note: 二つの集合は名前で結合しない（D-037）
