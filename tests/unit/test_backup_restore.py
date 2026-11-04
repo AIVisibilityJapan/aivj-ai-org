@@ -53,6 +53,16 @@ class Backup(unittest.TestCase):
         z2 = bs.backup(self.dest, root=self.repo, with_private=True)
         self.assertTrue(any("private" in n for n in zipfile.ZipFile(z2).namelist()))
 
+    def test_measurement_data_excluded_unless_asked(self):
+        m = self.repo / "データ" / "private" / "05-測定データ" / "01-出現率"
+        m.mkdir(parents=True)
+        (m / "big.sqlite").write_bytes(b"x" * 1000)
+        n1 = zipfile.ZipFile(bs.backup(self.dest, root=self.repo, with_private=True)).namelist()
+        self.assertFalse(any("05-測定データ" in n for n in n1))
+        self.assertTrue(any("01-顧客別" in n for n in n1))
+        n2 = zipfile.ZipFile(bs.backup(self.dest, root=self.repo, with_private=True, with_measurement=True)).namelist()
+        self.assertTrue(any("05-測定データ" in n for n in n2))
+
     def test_dest_required_and_not_inside_repo(self):
         with self.assertRaises(bs.BackupError):
             bs.backup("", root=self.repo)

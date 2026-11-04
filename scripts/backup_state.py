@@ -1,7 +1,8 @@
 """バックアップと復元（STEP 2 / 2-9, T2-14）。標準ライブラリのみ。外部へは送らない。
 
   py scripts/backup_state.py backup  --dest C:\\aivj_backup            実行状態・設定の個人別ファイルを zip に保存
-  py scripts/backup_state.py backup  --dest C:\\aivj_backup --with-private   データ\\private も含める（顧客情報を含む）
+  py scripts/backup_state.py backup  --dest C:\\aivj_backup --with-private   データ\\private も含める（顧客情報を含む。大容量の 05-測定データ は除く）
+  py scripts/backup_state.py backup  --dest C:\\aivj_backup --with-private --with-measurement   05-測定データ も含める（巨大になる）
   py scripts/backup_state.py verify  --file C:\\aivj_backup\\xxx.zip     zip が壊れていないか・改ざんされていないか確認
   py scripts/backup_state.py restore --file C:\\aivj_backup\\xxx.zip --to C:\\dev\\restore_test   空のフォルダへ復元（上書きしない）
 
@@ -23,6 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 TARGETS = [("実行状態", "データ/実行状態"), ("担当者台帳", "設定/担当者")]
 PRIVATE = ("private", "データ/private")
+MEASUREMENT = "データ/private/05-測定データ"   # 大容量・元データが別にあるコピー。既定ではバックアップに含めない
 MANIFEST = "manifest.json"
 
 
@@ -46,7 +48,7 @@ def _inside(child: Path, parent: Path) -> bool:
         return False
 
 
-def backup(dest, root=ROOT, with_private: bool = False, now=None) -> Path:
+def backup(dest, root=ROOT, with_private: bool = False, with_measurement: bool = False, now=None) -> Path:
     if not dest:
         raise BackupError("保存先（--dest）の指定が必要です")
     root, dest = Path(root), Path(dest)
@@ -59,13 +61,14 @@ def backup(dest, root=ROOT, with_private: bool = False, now=None) -> Path:
         if base.is_file():
             entries.append(base)
         elif base.is_dir():
-            entries += [p for p in sorted(base.rglob("*")) if p.is_file() and not p.name.endswith(".tmp")]
+            entries += [p for p in sorted(base.rglob("*")) if p.is_file() and not p.name.endswith(".tmp")
+                        and (with_measurement or not _inside(p, root / MEASUREMENT))]
     now = now or datetime.datetime.now()
     dest.mkdir(parents=True, exist_ok=True)
-    out = dest / f"aivj_backup_{now.strftime('%Y%m%d_%H%M%S')}{'_private' if with_private else ''}.zip"
+    out = dest / f"aivj_backup_{now.strftime('%Y%m%d_%H%M%S')}{'_private' if with_private else ''}{'_測定データ' if with_private and with_measurement else ''}.zip"
     if out.exists():
         raise BackupError(f"同名のバックアップがあります: {out.name}")
-    manifest = {"created": now.isoformat(timespec="seconds"), "with_private": with_private, "files": {}}
+    manifest = {"created": now.isoformat(timespec="seconds"), "with_private": with_private, "with_measurement": with_measurement, "files": {}}
     tmp = out.with_suffix(".tmp")
     with zipfile.ZipFile(tmp, "w", zipfile.ZIP_DEFLATED) as z:
         for p in entries:
@@ -135,10 +138,11 @@ def main(argv=None) -> int:
     ap.add_argument("--file")
     ap.add_argument("--to")
     ap.add_argument("--with-private", action="store_true")
+    ap.add_argument("--with-measurement", action="store_true", help="private に加えて 05-測定データ（大容量）も含める")
     a = ap.parse_args(argv)
     try:
         if a.cmd == "backup":
-            print(f"作成しました: {backup(a.dest, with_private=a.with_private)}")
+            print(f"作成しました: {backup(a.dest, with_private=a.with_private, with_measurement=a.with_measurement)}")
         elif a.cmd == "verify":
             m = verify(a.file)
             print(f"問題ありません: {len(m['files'])} ファイル（作成 {m['created']}）")

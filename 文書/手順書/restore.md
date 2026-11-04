@@ -13,6 +13,7 @@ py scripts/backup_state.py backup --dest C:\aivj_backup --with-private
 - `C:\aivj_backup` は例です。保存先は必ず指定します（存在しないドライブは使えません。`Get-PSDrive -PSProvider FileSystem` で使えるドライブを確認）。PowerShell では `<` `>` は使えないため、zip の名前は実際の名前に置き換えます。リポジトリの中は拒否されます（Git に載るのを防ぐため）。
 - zip は暗号化されません。**保存先は、本人しか開けない場所**（権限を絞ったフォルダ、BitLocker 等で暗号化したドライブ）にしてください。OneDrive 等の同期フォルダは避けてください。
 - zip 内の台帳（manifest.json）に、全ファイルの SHA-256 を記録します。
+- `--with-private` は、大容量の `データ\private\05-測定データ`（測定データのコピー）を含めません（元データが別にあるため）。含めたいときだけ `--with-measurement` を付けます（zip が巨大になります）。測定データは、元の場所と SHA-256 の記録（`データ\測定データ参照.md`）で守ります。
 - 頻度の目安: 実行状態は、作業をした日の終わりに 1 回。private は、資料を追加したとき。
 
 ## 2. 壊れていないか確認する
