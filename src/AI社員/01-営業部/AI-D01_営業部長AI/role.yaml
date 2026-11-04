@@ -1,0 +1,26 @@
+# 役割定義。全体一覧の正本は 文書/設計/AI_ROLES.csv
+role_id: "AI-D01"
+role_name: "営業部長 AI"
+type: "部長 AI"
+dept_code: "D01"
+dept: "営業部"
+section: null
+unit: null
+service_responsibility: null
+max_risk_tier: "mid"
+human_checkpoint: "外部送信・見積提示は人間確認/重要条件は社長承認"
+escalate_to: "AI-000"
+build_step: "STEP6"
+pilot: false
+impl_status: "not_implemented"
+
+# 以下は build_step の段階で具体化する（未定義のまま実装しない）
+definition:
+  purpose: null
+  trigger: null
+  inputs: []
+  outputs: []
+  tools: []
+  permissions: []
+  stop_conditions: []
+  evaluation: []

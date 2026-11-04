@@ -17,7 +17,7 @@ class Sandbox:
     """リポジトリの必要部分だけを一時フォルダへ複製して、壊して検証する。"""
     def __enter__(self):
         self.tmp = Path(tempfile.mkdtemp())
-        for d in ("docs/design", "config", "services", "src/agents"):
+        for d in (str(Path(rr.CSV_PATH).parent), rr.CONFIG_DIR, rr.SERVICES_DIR, rr.AGENTS_DIR):
             shutil.copytree(ROOT / d, self.tmp / d, ignore=shutil.ignore_patterns("*.pyc", "__pycache__"))
         return self.tmp
     def __exit__(self, *a): shutil.rmtree(self.tmp, ignore_errors=True)
@@ -53,7 +53,7 @@ class TestDetectsProblems(unittest.TestCase):
 
     def test_missing_role_yaml(self):
         with Sandbox() as t:
-            (t / "src/agents/00-全社COO/ai-000_coo/role.yaml").unlink()
+            (t / "src/AI社員/00-全社COO/AI-000_COO/role.yaml").unlink()
             self.assertTrue(has(rr.validate(t)[1], "ファイルがない"))
 
     def test_unknown_escalation(self):
@@ -81,13 +81,13 @@ class TestDetectsProblems(unittest.TestCase):
 
     def test_service_owner_not_head(self):
         with Sandbox() as t:
-            p = t / "config/services.yaml"
+            p = t / "設定/services.yaml"
             p.write_text(p.read_text(encoding="utf-8").replace("owner_role: AI-D03", "owner_role: AI-03-01", 1), encoding="utf-8")
             self.assertTrue(has(rr.validate(t)[1], "部長 AI として存在しない"))
 
     def test_stray_role_yaml(self):
         with Sandbox() as t:
-            d = t / "src/agents/01-営業部/ai-99_stray"; d.mkdir()
+            d = t / "src/AI社員/01-営業部/ai-99_stray"; d.mkdir()
             (d / "role.yaml").write_text("role_id: AI-99\n", encoding="utf-8")
             self.assertTrue(has(rr.validate(t)[1], "台帳にない role.yaml"))
 

@@ -1,6 +1,6 @@
 # orchestrator/
 
-AI COO の実装（STEP 2）。設計: docs/design/SYSTEM_ARCHITECTURE.md §6〜§7、OPERATING_RULES.md §10〜§11。
+AI COO の実装（STEP 2）。設計: 文書/設計/SYSTEM_ARCHITECTURE.md §6〜§7、OPERATING_RULES.md §10〜§11。
 
 | フォルダ | 役割 |
 |---|---|

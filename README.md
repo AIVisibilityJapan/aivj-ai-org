@@ -1,47 +1,49 @@
 # aivj-ai-org
 
 AI Visibility Japan の AI エージェント組織（7 部 25 課 51 係・59 役割）の設計・実装リポジトリ。
-新規専用アカウントでゼロから構築。旧システムへの依存・連携なし。現在: STEP 1 承認済み（2026-11-02）。STEP 2 の開始前に、外部登録・有料契約・本番構築は行わない。
+ゼロから構築（Claude アカウントは会社メールで作成済みの現アカウントを使用）。旧システムへの依存・連携なし。現在: STEP 1 承認済み（2026-11-02）。STEP 2 の開始前に、外部登録・有料契約・本番構築は行わない。
 
 ## 構成
+フォルダ名は日本語を基本とする。例外は、コードを置くフォルダ（src の実行コード、scripts、tests）とツールが名前で認識するフォルダ（.github、supabase）で、英語のまま。
 ```
-docs/
-  design/        設計の正本（MASTER_PLAN, AI_ROLES.csv, OPERATING_RULES, SYSTEM_ARCHITECTURE, IMPLEMENTATION_PLAN）
-  inputs/        元資料 PDF
-  decisions/     設計判断の記録
-  approvals/     社長・役員の承認記録
-  runbooks/      停止・復旧・障害対応手順
-  compliance/    法務・コンプライアンス確認リスト
-  meetings/      役員会議の記録
-config/          org / risk-tiers / approval-rules / budgets / services / humans(台帳テンプレート)
-services/        12 サービス領域の定義（サービス責任者は部長 AI が兼務）
+文書/
+  設計/          設計の正本（MASTER_PLAN, AI_ROLES.csv, OPERATING_RULES, SYSTEM_ARCHITECTURE, IMPLEMENTATION_PLAN）
+  入力資料/      元資料 PDF
+  判断ログ/      設計判断の記録
+  承認ログ/      社長・役員の承認記録
+  手順書/        停止・復旧・障害対応手順
+  法務確認/      法務・コンプライアンス確認リスト
+  会議/          役員会議の記録
+設定/            org / risk-tiers / approval-rules / budgets / services / 担当者(台帳テンプレート)
+サービス/        12 サービス領域の定義（サービス責任者は部長 AI が兼務）
 src/
-  agents/        00-全社COO + 7 部。役割ごとに ai-XX-XX_<slug>/role.yaml（計 59）
+  AI社員/        00-全社COO + 7 部。役割ごとに AI-XX-XX_役割名/role.yaml（計 59）
+  業務フロー/    業務フロー 7 本
   orchestrator/  AI COO・割当・承認キュー・停止機構
-  workflows/     業務フロー 7 本
   integrations/  GA4, Search Console, GBP, 広告, SNS, CRM, メール, 観光統計
-  shared/        ログ・コスト・権限チェック
+  shared/        ログ・コスト・権限チェック・役割台帳の検証
   admin-ui/      最小の管理画面
-supabase/        migrations / seed
-templates/       提案書・見積・レポート・契約草案・メール
-tests/           unit / sandbox / pilot-e2e
-data/            fixtures（架空データのみ）
-infra/           Managed Agents 設定・監視
+supabase/        migrations / seed（現在は未使用）
+テンプレート/    提案書・見積・レポート・契約草案・メール
+tests/           unit / step2-scenarios
+データ/          fixtures（架空データのみ）
+インフラ/        実行環境・監視
 scripts/  .github/
 ```
 各ディレクトリの README を参照。
 
 ## 運用ルール（文書の更新）
 - 更新される文書は複製せず、同じファイルを更新する（`_v2`・`_最新`・日付付きコピーを作らない）。
-- 末尾の「更新履歴」に、日付と変更の要約を新しい順で追記する。role.yaml は `history`、AI_ROLES.csv の変更は docs/design/MASTER_PLAN.md の更新履歴に記録する。
-- 判断は docs/decisions/README.md、承認は docs/approvals/README.md に時系列で追記する（1 ファイルに集約）。
-- 役割の状態の正本は docs/design/AI_ROLES.csv。部ごとの README の表は同期して更新する。
+- 末尾の「更新履歴」に、日付と変更の要約を新しい順で追記する。role.yaml は `history`、AI_ROLES.csv の変更は 文書/設計/MASTER_PLAN.md の更新履歴に記録する。
+- 判断は 文書/判断ログ/README.md、承認は 文書/承認ログ/README.md に時系列で追記する（1 ファイルに集約）。
+- 役割の状態の正本は 文書/設計/AI_ROLES.csv。部ごとの README の表は同期して更新する。
 - このチャットのセッションが手元のフォルダに接続されているときは、設計書を直接書き込む（zip の入れ替えは不要）。書き込み後は運営者が `git add .`・`git commit`・`git push` で GitHub に反映する。
 
 ## 更新履歴（新しい順）
 
 | 日付 | 変更 |
 |---|---|
+| 2026-11-04 | フォルダ名を日本語化（文書/設定/サービス/データ/インフラ/テンプレート、src/AI社員、src/業務フロー、役割・サービス・業務フローの各フォルダ）。判断ログ D-026 |
 | 2026-11-04 | 2-0 完了・2-2 完了を反映（判断ログ D-025） |
 | 2026-11-03 | 2026-11-03 の会議の決定を反映（判断ログ D-018〜D-024）。事業部フォルダを日本語名に変更 |
 | 2026-11-02 | Q-01〜Q-03 の決定を反映（判断ログ D-015〜D-017） |

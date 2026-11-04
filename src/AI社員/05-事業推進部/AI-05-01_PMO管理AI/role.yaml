@@ -1,0 +1,26 @@
+# 役割定義。全体一覧の正本は 文書/設計/AI_ROLES.csv
+role_id: "AI-05-01"
+role_name: "PMO 管理 AI"
+type: "係担当 AI"
+dept_code: "D05"
+dept: "事業推進部"
+section: "プロジェクト管理課"
+unit: "案件進行管理係"
+service_responsibility: null
+max_risk_tier: "high"
+human_checkpoint: "発注・仕様変更は PM 担当確認→社長承認"
+escalate_to: "AI-D05"
+build_step: "STEP6"
+pilot: false
+impl_status: "not_implemented"
+
+# 以下は build_step の段階で具体化する（未定義のまま実装しない）
+definition:
+  purpose: null
+  trigger: null
+  inputs: []
+  outputs: []
+  tools: []
+  permissions: []
+  stop_conditions: []
+  evaluation: []

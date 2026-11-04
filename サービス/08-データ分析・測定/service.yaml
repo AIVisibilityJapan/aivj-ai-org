@@ -1,0 +1,13 @@
+# このファイルは複製せず更新する
+name: データ分析・測定
+slug: 08-データ分析・測定
+business_type: 分析・レポート型（想定）
+owner_role: AI-D03
+owner_status: proposed（資料に明記なし。社長承認待ち）
+in_house_ai: 観光統計・行動／CV・KPI 分析・レポート
+outsourced: 現地／対面調査
+kpis: []
+pricing: null
+acceptance_criteria: null
+sop: []
+notes: 成果（AI 推薦の増加等）は保証しない表現を使う

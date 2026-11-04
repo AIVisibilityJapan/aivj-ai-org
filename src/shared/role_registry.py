@@ -1,7 +1,7 @@
 """役割台帳の取込と整合検証（STEP 2 / 2-2）。
 
-正本は docs/design/AI_ROLES.csv。各役割の role.yaml、config/org.yaml、config/services.yaml、
-services/*/service.yaml、config/approval-rules.yaml と突き合わせ、食い違いをすべて列挙する。
+正本は 文書/設計/AI_ROLES.csv。各役割の role.yaml、設定/org.yaml、設定/services.yaml、
+サービス/*/service.yaml、設定/approval-rules.yaml と突き合わせ、食い違いをすべて列挙する。
 標準ライブラリと PyYAML のみを使う。API・DB・外部通信は使わない。
 """
 from __future__ import annotations
@@ -13,12 +13,15 @@ from pathlib import Path
 
 import yaml
 
-CSV_PATH = "docs/design/AI_ROLES.csv"
+CSV_PATH = "文書/設計/AI_ROLES.csv"
 TYPES = {"AI COO", "部長 AI", "係担当 AI"}
 RISKS = {"low", "mid", "high"}
 STEPS = {f"STEP{i}" for i in range(2, 7)}
 IMPL_STATUSES = {"not_implemented", "definition_drafted", "implemented"}
 HUMAN_ESCALATION = {"社長"}
+CONFIG_DIR = "設定"
+SERVICES_DIR = "サービス"
+AGENTS_DIR = "src/AI社員"
 EXPECTED = {"roles": 59, "coo": 1, "heads": 7, "staff": 51, "departments": 7, "sections": 25, "units": 51, "services": 12, "pilots": 6}
 
 
@@ -117,11 +120,11 @@ def validate(root: Path | str) -> tuple[list[Role], list[str], list[str]]:
             if k not in d: errors.append(f"[role.yaml] {r.role_id}: definition.{k} がない")
     # --- 台帳にない role.yaml ---
     known = {str((root / r.folder / "role.yaml").resolve()) for r in roles}
-    for p in (root / "src" / "agents").rglob("role.yaml"):
+    for p in (root / AGENTS_DIR).rglob("role.yaml"):
         if str(p.resolve()) not in known: errors.append(f"[role.yaml] 台帳にない role.yaml: {p.relative_to(root).as_posix()}")
 
     # --- org.yaml ---
-    org = _read_yaml(root / "config" / "org.yaml")
+    org = _read_yaml(root / CONFIG_DIR / "org.yaml")
     for d in org["departments"]:
         rs = [r for r in roles if r.dept_code == d["code"]]
         if not rs: errors.append(f"[org.yaml] {d['code']}: 台帳に役割がない"); continue
@@ -137,23 +140,23 @@ def validate(root: Path | str) -> tuple[list[Role], list[str], list[str]]:
         if t[key] != val: errors.append(f"[org.yaml] totals.{key} が台帳と違う（{t[key]} / {val}）")
 
     # --- サービス責任 ---
-    svc = _read_yaml(root / "config" / "services.yaml")["services"]
+    svc = _read_yaml(root / CONFIG_DIR / "services.yaml")["services"]
     if len(svc) != EXPECTED["services"]: errors.append(f"[services] サービス数が想定と違う: {len(svc)}")
     for s in svc:
         o = by_id.get(s["owner_role"])
         if o is None or o.type != "部長 AI": errors.append(f"[services] {s['slug']}: owner_role が部長 AI として存在しない: {s['owner_role']}")
-        sp = root / "services" / s["slug"] / "service.yaml"
+        sp = root / SERVICES_DIR / s["slug"] / "service.yaml"
         if not sp.is_file(): errors.append(f"[services] {s['slug']}: service.yaml がない"); continue
         if _read_yaml(sp).get("owner_role") != s["owner_role"]: errors.append(f"[services] {s['slug']}: service.yaml の owner_role が違う")
 
     # --- 承認ルール ---
-    ar = _read_yaml(root / "config" / "approval-rules.yaml")
+    ar = _read_yaml(root / CONFIG_DIR / "approval-rules.yaml")
     for a in ar["actions"]:
         if a.get("final_approver") != "社長": errors.append(f"[approval-rules] {a.get('action')}: 最終承認者が社長でない")
         if not a.get("precheck"): errors.append(f"[approval-rules] {a.get('action')}: precheck がない")
 
     # --- 上限（情報） ---
-    b = _read_yaml(root / "config" / "budgets.yaml")
+    b = _read_yaml(root / CONFIG_DIR / "budgets.yaml")
     def leaves(x, path=""):
         if isinstance(x, dict):
             for k, v in x.items(): yield from leaves(v, f"{path}.{k}" if path else k)

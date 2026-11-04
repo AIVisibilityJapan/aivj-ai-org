@@ -1,0 +1,26 @@
+# 役割定義。全体一覧の正本は 文書/設計/AI_ROLES.csv
+role_id: "AI-04-13"
+role_name: "CRO・効果検証 AI"
+type: "係担当 AI"
+dept_code: "D04"
+dept: "AIO・デジタルマーケティング部"
+section: "アクセス解析・改善課"
+unit: "CV 改善・効果検証係"
+service_responsibility: null
+max_risk_tier: "mid"
+human_checkpoint: "顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認"
+escalate_to: "AI-D04"
+build_step: "STEP6"
+pilot: false
+impl_status: "not_implemented"
+
+# 以下は build_step の段階で具体化する（未定義のまま実装しない）
+definition:
+  purpose: null
+  trigger: null
+  inputs: []
+  outputs: []
+  tools: []
+  permissions: []
+  stop_conditions: []
+  evaluation: []
