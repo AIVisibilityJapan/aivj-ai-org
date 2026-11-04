@@ -1,0 +1,14 @@
+﻿確認項目,判定の根拠となる情報,URL,取得日,備考
+観光スポット,グローバルナビに掲載,https://www.nankishirahama.jp/spot/,2026-11-04,
+宿泊,グローバルナビに掲載,https://www.nankishirahama.jp/hotel/,2026-11-04,
+アクセス,グローバルナビに掲載,https://www.nankishirahama.jp/access/,2026-11-04,
+イベント,グローバルナビに掲載,https://www.nankishirahama.jp/event/,2026-11-04,
+グルメ,グローバルナビに掲載,https://www.nankishirahama.jp/gourmet/,2026-11-04,
+温泉,グローバルナビに掲載,https://www.nankishirahama.jp/onsen/,2026-11-04,
+遊び・体験,グローバルナビに掲載,https://www.nankishirahama.jp/experience/,2026-11-04,
+モデルコース,グローバルナビに掲載,https://www.nankishirahama.jp/course/,2026-11-04,
+お問い合わせ,グローバルナビに掲載,https://www.nankishirahama.jp/contact/,2026-11-04,
+観光パンフレット,グローバルナビに掲載（別サブドメイン）,http://brochure.nankishirahama.jp/,2026-11-04,
+旅行会社向け情報,補助メニューに項目あり,,2026-11-04,URLは未取得
+多言語対応（英語・中国語・韓国語）,言語切替の選択肢あり,,2026-11-04,別ドメイン（nankishirahama.j-server.com）経由のため中身は未確認
+多言語ページの内容,未確認,,2026-11-04,試験用: 判定不能（不明）になるべき項目
