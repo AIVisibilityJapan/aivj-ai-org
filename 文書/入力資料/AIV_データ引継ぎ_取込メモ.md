@@ -60,6 +60,14 @@
 - API 送信（Claude v4 は NOT_AUTHORIZED）は、D-025（API を使わない）と整合する。送信許可は出さない。
 - 再測定・ranking／Mart の再計算は行わない（正式値は凍結。D-036 の copy-only の原則）。
 
+## 6.5 パスの長さの注意（2026-11-05 に判明）
+`C:\dev\aivj-ai-org\データ\private\05-測定データ\` 配下は、HDD 上（`D:\` 直下）より約 42 文字長い。Claude v4 の深い階層（`...\02_RUNTIME\shared_sources\appearance\08_aggregation\aiv_formal_appearance_aggregate.py`）は、ちょうど 260 文字で、Windows の通常の上限（MAX_PATH）に達する。ファイル自体はコピーされているが、Python の復元・照合ツールは「指定されたパスが見つかりません」で止まった（失敗時は何も変更しない設計。`STOPPED_NO_RESTORE`）。
+対処: `subst X:`（仮のドライブ文字）は無効だった（ツールが実パスへ戻して読むため、同じ所で止まった）。**社長が、Windows の長いパスを有効にすることを承認（D-038）**。管理者の PowerShell で 1 回だけ:
+```powershell
+New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -PropertyType DWORD -Force
+```
+反映されない場合は、PC を再起動する。元に戻す場合は `-Value 0`。データは動かさない。変更後に、照合ツールをもう一度実行する（§ 照合）。AI（Python）が深い階層を読むときも、この設定が前提。
+
 ## 7. 社長・担当者への確認事項
 1. 復旧用フォルダ（PRESERVATION・BATCH3 など約 150GB 超）を C ドライブに置き続けるか（HDD に原本があるため、C には 01・02 だけでも足りる）。削除は社長が判断する（私は消さない）。
 2. 担当者への確認: 未回収の過去 API 応答 JSON 14,592 件は、再回収の予定があるか。STEP 4 の入力には現行の正式データで足りる想定。
