@@ -87,7 +87,7 @@ def organize(rec: dict, source: dict, pins: dict | None = None) -> dict:
     res = []
     for i, x in enumerate(rec["resources"], 1):
         name = x["asset_name"]
-        res.append({"no": i, "name": None if name == "―" else name, "state": "NOT_AVAILABLE" if name == "―" else "FORMAL_VALUE",
+        res.append({"no": i, "name": None if name == "―" else name, "display": name, "state": "NOT_AVAILABLE" if name == "―" else "FORMAL_VALUE",
                     "origin": x.get("source")})
     metrics = {
         "appearance_rate": {"unit": f"全国{pop['appearance']}自治体を母数とする出現率（回答への登場割合）",
