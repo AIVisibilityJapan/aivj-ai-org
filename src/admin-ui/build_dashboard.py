@@ -26,7 +26,7 @@ DEFAULT_STATE = ROOT / "データ" / "実行状態"
 BUDGETS = ROOT / "設定" / "budgets.yaml"
 ACTIVE = {"queued", "running", "awaiting_approval"}
 LABEL = {"queued": "待機", "running": "実行中", "succeeded": "成功", "failed": "失敗", "stopped": "停止",
-         "awaiting_approval": "承認待ち", "blocked": "ブロック"}
+         "awaiting_approval": "承認待ち", "blocked": "ブロック", "rejected": "差戻し"}
 
 
 def _esc(v) -> str:
@@ -153,7 +153,7 @@ def render(d: dict) -> str:
     n = {k: sum(1 for t in d["tasks"] if t.get("status") == k) for k in LABEL}
     tiles = [("停止中", len(d["stopped"]), bool(d["stopped"])), ("承認待ち", len(d["pending"]), bool(d["pending"])),
              ("未対応（人）", len(d["items"]), False), ("期限超過", len(d["overdue"]), bool(d["overdue"])),
-             ("失敗", n["failed"], n["failed"] > 0), ("ブロック", n["blocked"], n["blocked"] > 0),
+             ("失敗", n["failed"], n["failed"] > 0), ("差戻し", n["rejected"], n["rejected"] > 0), ("ブロック", n["blocked"], n["blocked"] > 0),
              ("実行中・待機", n["running"] + n["queued"], False), ("費用合計", cr.fmt_money(d["cost"], d["rate"][0]), d["cost"] > 0)]
     tile_html = "".join(f'<div class="tile{" warn" if w else ""}"><b>{_esc(v)}</b><span>{_esc(k)}</span></div>' for k, v, w in tiles)
     banner = ""
@@ -168,7 +168,7 @@ def render(d: dict) -> str:
         c = {k: sum(1 for t in ts if t.get("status") == k) for k in LABEL}
         proj_rows.append([_esc(pid), _esc(len(ts)), _esc(c["succeeded"]), _esc(c["running"] + c["queued"]),
                           _esc(c["awaiting_approval"]), _esc(c["failed"]), _esc(c["blocked"]), _esc(c["stopped"])])
-    attention = [t for t in d["tasks"] if t.get("status") in ACTIVE | {"failed", "blocked", "stopped"}]
+    attention = [t for t in d["tasks"] if t.get("status") in ACTIVE | {"failed", "blocked", "stopped", "rejected"}]
     task_rows = [[_esc(t.get("task_id")), _esc(t.get("idempotency_key")), _esc(t.get("role_id")),
                   f'<span class="st {_esc(t.get("status"))}">{_esc(LABEL.get(t.get("status"), t.get("status")))}</span>',
                   _esc(t.get("attempts")), _esc(_ts(t.get("updated"))), _esc(_task_reason(t))] for t in attention]
@@ -199,7 +199,7 @@ def render(d: dict) -> str:
            ".tile.warn{border-color:#c2410c;background:#fff4ec}.banner{background:#fee2e2;border:1px solid #b91c1c;color:#7f1d1d;"
            "padding:10px 14px;border-radius:8px;margin:10px 0}table{border-collapse:collapse;width:100%;background:#fff;font-size:13px}"
            "th,td{border:1px solid #e3e6ec;padding:5px 8px;text-align:left;vertical-align:top;word-break:break-all}th{background:#eef0f4}"
-           ".st{font-weight:600}.st.failed,.st.blocked,.st.stopped{color:#b91c1c}.st.awaiting_approval{color:#b45309}"
+           ".st{font-weight:600}.st.failed,.st.blocked,.st.stopped,.st.rejected{color:#b91c1c}.st.awaiting_approval{color:#b45309}"
            "@media(prefers-color-scheme:dark){body{background:#12151b;color:#e5e7eb}.tile,table{background:#1b1f27;border-color:#343a46}"
            "th{background:#252a34}th,td{border-color:#343a46}.tile.warn{background:#3a2314}.banner{background:#3b1414;color:#fecaca}}")
     note = ('<p class="muted">この画面は表示のみです。承認・停止・再開は社長がチャット、または '

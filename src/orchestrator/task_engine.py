@@ -20,13 +20,23 @@ import time
 import uuid
 from pathlib import Path
 
-QUEUED, RUNNING, SUCCEEDED, FAILED, STOPPED, AWAITING, BLOCKED = (
-    "queued", "running", "succeeded", "failed", "stopped", "awaiting_approval", "blocked")
-TERMINAL = {SUCCEEDED, FAILED, STOPPED, BLOCKED}
+QUEUED, RUNNING, SUCCEEDED, FAILED, STOPPED, AWAITING, BLOCKED, REJECTED = (
+    "queued", "running", "succeeded", "failed", "stopped", "awaiting_approval", "blocked", "rejected")
+TERMINAL = {SUCCEEDED, FAILED, STOPPED, BLOCKED, REJECTED}
 
 
 class EngineError(Exception):
     pass
+
+
+class Rejected(Exception):
+    """処理が『再試行しても変わらない理由で先へ進めない（差戻し）』と明示するための例外（Q-15）。
+    想定外のエラーは従来どおり失敗（再試行・連続失敗で自動停止）。差戻しは再試行せず、連続失敗にも数えず、役割も止めない。"""
+
+    def __init__(self, reason: str, fix_points=None):
+        super().__init__(reason)
+        self.reason = reason
+        self.fix_points = list(fix_points or [])
 
 
 def _now() -> float:
@@ -227,7 +237,7 @@ class TaskEngine:
     def _dependency_state(self, t: dict) -> str:
         """'ready'（依存なしまたはすべて成功）／'waiting'（未完了あり）／'failed'（失敗・停止・ブロックあり）。"""
         states = [self.get(d)["status"] for d in t.get("depends_on", [])]
-        if any(x in (FAILED, STOPPED, BLOCKED) for x in states):
+        if any(x in (FAILED, STOPPED, BLOCKED, REJECTED) for x in states):
             return "failed"
         return "ready" if all(x == SUCCEEDED for x in states) else "waiting"
 
@@ -277,6 +287,14 @@ class TaskEngine:
             self._log(t, "retry_scheduled", reason)
         self._save(t)
         self._auto_stop_if_needed(t, reason)
+        return t
+
+    def reject(self, task_id: str, worker: str, reason: str, fix_points=None) -> dict:
+        """差戻しを記録（Q-15）。再試行しない・連続失敗に数えない・役割を停止しない。後続の工程は走らない。"""
+        t = self._running(task_id, worker)
+        t.update(status=REJECTED, lease_until=None, result={"rejected": reason, "fix_points": list(fix_points or [])})
+        self._log(t, "rejected", reason)
+        self._save(t)
         return t
 
     def record_cost(self, task_id: str, worker: str, usd: float) -> dict:

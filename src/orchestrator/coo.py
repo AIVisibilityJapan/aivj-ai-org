@@ -13,10 +13,14 @@ from __future__ import annotations
 import json
 import os
 import re
+import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "shared"))
+
 from approval_queue import ApprovalQueue, HumanQueue, payload_hash
-from task_engine import (AWAITING, BLOCKED, FAILED, QUEUED, SUCCEEDED, EngineError, TaskEngine)
+import rejection_log as rlog
+from task_engine import (AWAITING, BLOCKED, FAILED, QUEUED, REJECTED, SUCCEEDED, EngineError, Rejected, TaskEngine)
 
 COO_ID = "AI-000"
 REQUIRED = ("project_id", "client_id", "service_id", "workflow")
@@ -48,6 +52,7 @@ class COO:
         self.approvals = _ApprovalsView(ApprovalQueue(state_dir, approval_limits or {}, clock=self.clock))
         self.humans = HumanQueue(state_dir, approval_limits or {}, clock=self.clock)
         self.handlers, self.workflows, self.services, self.worker = handlers, workflows, set(services), worker
+        self.rejection_log = self.base / "差戻しログ.md"   # 差戻しの記録は 1 ファイルに加筆（新しい順）
 
     # ---- 保存 ----
     def _pp(self, pid: str) -> Path:
@@ -164,6 +169,8 @@ class COO:
                 self.engine.complete(t["task_id"], self.worker, result)
             except EngineError:
                 raise
+            except Rejected as e:                                 # 差戻し: 再試行せず、連続失敗にも数えない（Q-15）
+                self.engine.reject(t["task_id"], self.worker, e.reason, e.fix_points)
             except Exception as e:                                # noqa: BLE001 ハンドラの失敗は再試行へ
                 self.engine.fail(t["task_id"], self.worker, f"{type(e).__name__}: {e}")
 
@@ -176,6 +183,17 @@ class COO:
                 self.humans.add("社長", f"失敗（再試行上限）: {t['role_id']} {t['idempotency_key']}", "mid",
                                 detail=f"障害ログ: {log}。切り戻し案: このタスクの出力を破棄し、本番側は変更されていないことを確認、"
                                        f"原因確認後に再投入。")
+                st["escalated"].append(t["task_id"])
+        for t in self.engine.all_tasks():
+            if t["status"] == REJECTED and t["task_id"] not in st["escalated"]:
+                res = t.get("result") or {}
+                fix = "／".join(res.get("fix_points") or []) or "（呼び出し側から指定なし）"
+                self.humans.add("社長", f"差戻し: {t['role_id']} {t['idempotency_key']}", "mid",
+                                detail=f"理由: {res.get('rejected')}。変更すべき箇所: {fix}。"
+                                       f"原因の箇所は自動では変更しません。変更するかをご確認ください。"
+                                       f"直したら新しい案件番号で登録し直してください（差戻しログ.md に記録）。")
+                rlog.append(self.rejection_log, "差戻し", t["idempotency_key"], f"{t['role_id']}: {res.get('rejected')}",
+                            fix, "（未変更。変更したら『変更の実施』を記録）", "AI COO", clock=self.clock)
                 st["escalated"].append(t["task_id"])
         log = self.engine.stop_log()
         for e in log[st["stop_log_seen"]:]:
@@ -191,7 +209,7 @@ class COO:
                 continue
             states = [self.engine.get(r["task_id"])["status"] for r in p["steps"].values()]
             new = "done" if all(s == SUCCEEDED for s in states) else (
-                "attention" if any(s in (FAILED, BLOCKED) for s in states) else "running")
+                "attention" if any(s in (FAILED, BLOCKED, REJECTED) for s in states) else "running")
             if new != p["status"]:
                 p["status"] = new
                 self._save_project(p)

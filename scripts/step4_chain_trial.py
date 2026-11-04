@@ -50,7 +50,7 @@ for _ in range(4):
 print("案件の状態:", rep["projects"], "／費用(USD):", rep["cost_usd_total"])
 for sid, rec in c.get_project("P-TRIAL-1")["steps"].items():
     t = c.engine.get(rec["task_id"])
-    why = [h["detail"] for h in t["history"] if h["event"] in ("failed", "retry", "fail") and h["detail"]][-1:]
+    why = [h["detail"] for h in t["history"] if h["event"] in ("failed", "retry", "fail", "rejected") and h["detail"]][-1:]
     print(f"  {sid:17s} {t['status']:18s} {why[0][:150] if why else ''}")
 print("人間キュー:", [x["title"] for x in c.humans.open_items()])
 shutil.rmtree(state, ignore_errors=True)

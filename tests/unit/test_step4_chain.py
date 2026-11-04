@@ -95,9 +95,11 @@ def test_t4_09_tampered_source_stops_and_goes_to_human(env):
     for _ in range(4):
         c.tick()
     steps = c.get_project("P-FR-1")["steps"]
-    assert c.engine.get(steps["analyze"]["task_id"])["status"] == "failed"
+    assert c.engine.get(steps["analyze"]["task_id"])["status"] == "rejected"       # Q-15: 再試行せず差戻し
+    assert c.engine.get(steps["analyze"]["task_id"])["attempts"] == 1
     assert c.engine.get(steps["write"]["task_id"])["status"] != "succeeded"        # 下流は走らない
-    assert any("失敗" in str(x) for x in c.humans.open_items())
+    assert any("差戻し" in str(x) and "pins.yaml" in str(x) for x in c.humans.open_items())  # 変更すべき箇所が報告される
+    assert c.engine.stopped() == set()                                             # 役割は自動停止しない
     assert c.get_project("P-FR-1")["status"] == "attention"
 
 
@@ -111,7 +113,10 @@ def test_audit_rejection_blocks_release_and_is_reported(env):
         c.tick()
     steps = c.get_project("P-FR-1")["steps"]
     a = c.engine.get(steps["audit"]["task_id"])
-    assert a["status"] == "failed" and "協会名" in " ".join(h["detail"] for h in a["history"])
+    assert a["status"] == "rejected" and a["attempts"] == 1 and "協会名" in " ".join(h["detail"] for h in a["history"])
+    assert c.engine.stopped() == set()                                              # 差戻しでは AI-06-06 は止まらない（R-8）
+    log = (tmp / "state2" / "差戻しログ.md").read_text(encoding="utf-8")
+    assert "差戻し" in log and "ひな形" in log                                      # 変更すべき箇所が 1 つのログに残る
     assert c.engine.get(steps["president_review"]["task_id"])["status"] != "succeeded"
 
 

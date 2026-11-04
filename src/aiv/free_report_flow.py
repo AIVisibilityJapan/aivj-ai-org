@@ -9,8 +9,12 @@
 from __future__ import annotations
 
 import hashlib
+import sys
 from dataclasses import dataclass
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "orchestrator"))
+from task_engine import Rejected  # noqa: E402
 
 import diagnosis_memo as dm
 import report_audit as ra
@@ -44,6 +48,35 @@ TRIAL_ROLES = {r: TrialRole(r) for r in ("AI-000", "AI-03-01", "AI-04-01", "AI-0
 
 class AuditRejected(Exception):
     pass
+
+
+TPL = "ひな形 FMT v2.22（データ/private/06-STEP4作業/FMT/無償レポート_FMTv2.22.pptx）の該当の文言"
+FIX_BY_CHECK = {
+    "協会名": TPL, "住所": TPL, "AI名称": TPL, "AI名称の区切り": TPL, "母数注記": TPL, "リスク表現": TPL, "外部ツール名": TPL,
+    "未差し込み": "差し込み対応表（src/aiv/report_filler.py）またはひな形の差し込み項目",
+    "値の一致": "根拠データ（値ファイル）または差し込み対応表（src/aiv/report_filler.py）。どちらが正しいかを確認",
+    "評価と順位": "根拠データ（値ファイル）の評価・順位。取り込み元の確認",
+    "出現率の書式": "根拠データ（値ファイル）の出現率の値",
+}
+FIX_SHA = ["src/aiv/pins.yaml の固定 SHA と、値ファイル（データ/private/05-測定データ/…）のどちらが正しいかを確認（データが変わった可能性。自動では直さない）"]
+FIX_MUNI = ["案件登録の自治体名・municipality_id（重複する場合は municipality_id で指定）"]
+FIX_FILL = ["ひな形の差し込み項目／差し込み対応表（src/aiv/report_filler.py）／案件パラメータ（発行日・次回配信・測定期間）"]
+
+
+def _rejecting(fn):
+    """Q-15: 再試行しても変わらない停止（検査の不合格・固定との不一致・差し込みの停止）は『差戻し』として返す。想定外のエラーはそのまま（失敗）。"""
+    def wrapped(payload, up):
+        try:
+            return fn(payload, up)
+        except AuditRejected as e:
+            checks = [c for c in FIX_BY_CHECK if f"]{c}:" in str(e)]
+            raise Rejected(str(e), sorted({FIX_BY_CHECK[c] for c in checks}) or ["監査の指摘（差戻しの理由）を確認"]) from e
+        except vr.ReaderStop as e:
+            fix = FIX_SHA if "SHA" in str(e) else (FIX_MUNI if "自治体" in str(e) else ["根拠データ（値ファイル）の内容と pins.yaml"])
+            raise Rejected(str(e), fix) from e
+        except rf.FillStop as e:
+            raise Rejected(str(e), FIX_FILL) from e
+    return wrapped
 
 
 def _sha(path) -> str:
@@ -95,4 +128,5 @@ def make_handlers(cfg: dict) -> dict:
             raise AuditRejected("不合格の成果物は確認工程に進めない")
         return {"status": "社長の最終確認済み（外部への送付はしていない）", "pptx": a["pptx"]}, 0.0
 
-    return {"AI-03-01": analyze, "AI-04-01": diagnose, "AI-03-05": write, "AI-06-06": audit, "AI-000": president_review}
+    return {k: _rejecting(v) for k, v in {"AI-03-01": analyze, "AI-04-01": diagnose, "AI-03-05": write,
+                                          "AI-06-06": audit, "AI-000": president_review}.items()}

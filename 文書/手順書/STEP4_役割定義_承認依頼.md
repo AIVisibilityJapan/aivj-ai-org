@@ -29,12 +29,13 @@ STEP 4 の 5 役割（AI COO・地域 AIV 分析 AI・AIO 診断 AI・レポー�
 ## 5. 内容ハッシュ（承認後に変わると無効）
 | 役割 | role.yaml の SHA-256 |
 |---|---|
-| AI-000 COO | `71dedbee3ecb752cdaa3d462f375b428b5a43206321e5738de41ccab90ed46d5` |
+| AI-000 COO | `31f6da11286bd76cd01f1b892365a488b1ccd32ab4cc48672f37767e6703d5f3` |
 | AI-03-01 地域AIV分析AI | `eacf634ac671b6491f8b4a2c8ff5f9dac28b8dd062e45b227af31535508bf1cf` |
 | AI-03-05 レポート制作AI | `88a8c711244a391d8bf5f92aaacb5e0a5927e8b7669fb133efb39ff37bc56c23` |
 | AI-04-01 AIO診断AI | `b1df7badaeed138fdaeec49a750576335201f4d42df082fa21f6a32bd3c4eec5` |
-| AI-06-06 品質・リスク監査AI | `7c2717c615977207efc82dd819248b66cf1cd97d0be5559aed1ac6c68e34cb1d` |
+| AI-06-06 品質・リスク監査AI | `a19e524fda3a63cd145e25c7471603e320f438632288e7f449add77f304a61c2` |
 
 ## 更新履歴
+- 2026-11-05: Q-15 実装に伴い AI-000・AI-06-06 の role.yaml を軽微に改善（ハッシュ更新。承認ログに記録）
 - 2026-11-05: 社長の回答を反映（D-042）。role.yaml は承認時のハッシュのまま変更しない
 - 2026-11-05: 初版（承認待ち）
