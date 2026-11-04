@@ -10,3 +10,5 @@
 |---|---|
 | 2026-11-04 | role_registry.py（2-2）を追加 |
 | 2026-11-02 | サブフォルダの構成を追記 |
+
+`cost_report.py`: 費用の集計（日別・役割別・案件別）と円の併記、CSV 出力（2-8、D-033）。為替は 設定/budgets.yaml の display.usd_jpy（表示専用）。CSV は `py scripts/export_costs.py`。

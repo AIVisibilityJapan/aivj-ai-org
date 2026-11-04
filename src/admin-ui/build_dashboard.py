@@ -15,10 +15,13 @@ import datetime
 import html
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent.parent
+sys.path.insert(0, str(ROOT / "src" / "shared"))
+import cost_report as cr  # noqa: E402
 DEFAULT_STATE = ROOT / "データ" / "実行状態"
 BUDGETS = ROOT / "設定" / "budgets.yaml"
 ACTIVE = {"queued", "running", "awaiting_approval"}
@@ -129,7 +132,8 @@ def collect(state_dir, budgets_path=BUDGETS, now: float | None = None) -> dict:
             "stopped": sorted(str(x) for x in stopped) if isinstance(stopped, list) else [],
             "streak": streak if isinstance(streak, dict) else {}, "stop_log": stop_log, "appr_log": appr_log,
             "notify_unsent": [n for n in notify if not n.get("sent")], "cost": cost,
-            "limits": _limits_view(Path(budgets_path))}
+            "limits": _limits_view(Path(budgets_path)),
+            "rate": cr.load_rate(budgets_path), "costs": cr.summarize(tasks)}
 
 
 def _task_reason(t: dict) -> str:
@@ -150,7 +154,7 @@ def render(d: dict) -> str:
     tiles = [("停止中", len(d["stopped"]), bool(d["stopped"])), ("承認待ち", len(d["pending"]), bool(d["pending"])),
              ("未対応（人）", len(d["items"]), False), ("期限超過", len(d["overdue"]), bool(d["overdue"])),
              ("失敗", n["failed"], n["failed"] > 0), ("ブロック", n["blocked"], n["blocked"] > 0),
-             ("実行中・待機", n["running"] + n["queued"], False), ("費用合計（USD）", d["cost"], d["cost"] > 0)]
+             ("実行中・待機", n["running"] + n["queued"], False), ("費用合計", cr.fmt_money(d["cost"], d["rate"][0]), d["cost"] > 0)]
     tile_html = "".join(f'<div class="tile{" warn" if w else ""}"><b>{_esc(v)}</b><span>{_esc(k)}</span></div>' for k, v, w in tiles)
     banner = ""
     if d["stopped"]:
@@ -177,6 +181,16 @@ def render(d: dict) -> str:
                  for e in reversed(d["stop_log"][-20:])]
     log_rows = [[_esc(_ts(e.get("at"))), _esc(e.get("event")), _esc(e.get("approval_id")), _esc(e.get("actor")), _esc(e.get("note"))]
                 for e in reversed(d["appr_log"][-20:])]
+    rate, rate_day = d["rate"]
+    cs = d["costs"]
+    money = lambda v: _esc(cr.fmt_money(v, rate))  # noqa: E731
+    cost_note = (f"<p class=\"muted\">費用はドル建てで記録しています。円は目安（1 ドル＝{_esc(f'{rate:g}')} 円、{_esc(rate_day)} 時点）で、上限の判定には使いません。</p>"
+                 if rate else "<p class=\"muted\">費用はドル建てで記録しています。為替が未設定のため、円は表示していません。</p>")
+    cost_html = (cost_note + _table(["区分", "キー", "費用"],
+                 [["日別", _esc(k), money(v)] for k, v in sorted(cs["by_day"].items(), reverse=True)[:14]]
+                 + [["役割別", _esc(k), money(v)] for k, v in sorted(cs["by_role"].items()) if v]
+                 + [["案件別", _esc(k), money(v)] for k, v in sorted(cs["by_project"].items()) if v]
+                 + [["合計", "", money(cs["total"])]]))
     gen = datetime.datetime.fromtimestamp(d["now"]).strftime("%Y-%m-%d %H:%M:%S")
     css = ("body{font:14px/1.6 system-ui,'Yu Gothic',sans-serif;margin:0;background:#f6f7f9;color:#1d2330}"
            "main{max-width:1100px;margin:0 auto;padding:16px}h1{font-size:20px}h2{font-size:16px;margin:28px 0 8px}"
@@ -203,6 +217,7 @@ def render(d: dict) -> str:
             + sec("人間キュー（未対応）", _table(["ID", "担当", "件名", "リスク", "期限", ""], item_rows))
             + sec("停止ログ（直近 20 件）", _table(["日時", "操作", "対象", "実行者", "理由"], stop_rows))
             + sec("承認記録（直近 20 件）", _table(["日時", "イベント", "承認 ID", "実行者", "備考"], log_rows))
+            + sec("費用の集計", cost_html)
             + sec("上限の設定状況", _table(["項目", "値"], lim_rows))
             + sec("未送信の通知（Gmail）", f"<p>{_esc(len(d['notify_unsent']))} 件が送信待ちです。送信は事前確認のうえ人間が行います。</p>")
             + "</main></body></html>")
