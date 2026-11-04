@@ -1,0 +1,26 @@
+# 役割定義。全体一覧の正本は docs/design/AI_ROLES.csv
+role_id: "AI-D03"
+role_name: "AIV・調査分析部長 AI"
+type: "部長 AI"
+dept_code: "D03"
+dept: "AIV・調査分析部"
+section: null
+unit: null
+service_responsibility: "AIV・AI 需要／市場分析"
+max_risk_tier: "low"
+human_checkpoint: "重要レポートは人間レビュー+経営管理部の独立監査"
+escalate_to: "AI-000"
+build_step: "STEP6"
+pilot: false
+impl_status: "not_implemented"
+
+# 以下は build_step の段階で具体化する（未定義のまま実装しない）
+definition:
+  purpose: null
+  trigger: null
+  inputs: []
+  outputs: []
+  tools: []
+  permissions: []
+  stop_conditions: []
+  evaluation: []

@@ -10,7 +10,7 @@ service_responsibility: null
 max_risk_tier: "high"
 human_checkpoint: "権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長"
 escalate_to: "AI-000"
-build_step: "STEP3"
+build_step: "STEP6"
 pilot: false
 impl_status: "not_implemented"
 

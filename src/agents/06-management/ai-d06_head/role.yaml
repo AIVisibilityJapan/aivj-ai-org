@@ -10,7 +10,7 @@ service_responsibility: null
 max_risk_tier: "high"
 human_checkpoint: "請求・契約は総務担当確認/重大品質問題は社長へ直接報告"
 escalate_to: "AI-000"
-build_step: "STEP4"
+build_step: "STEP6"
 pilot: false
 impl_status: "not_implemented"
 

@@ -2,37 +2,37 @@
 departments:
   - code: "D01"
     name: "営業部"
-    folder: "src/agents/01-sales"
+    folder: "src/agents/01-営業部"
     sections: 4
     units: 8
   - code: "D02"
     name: "事業開発部"
-    folder: "src/agents/02-business-development"
+    folder: "src/agents/02-事業開発部"
     sections: 4
     units: 8
   - code: "D03"
     name: "AIV・調査分析部"
-    folder: "src/agents/03-aiv-research"
+    folder: "src/agents/03-AIV調査分析部"
     sections: 3
     units: 6
   - code: "D04"
     name: "AIO・デジタルマーケティング部"
-    folder: "src/agents/04-aio-digital-marketing"
+    folder: "src/agents/04-AIOデジタルマーケティング部"
     sections: 6
     units: 13
   - code: "D05"
     name: "事業推進部"
-    folder: "src/agents/05-project-management"
+    folder: "src/agents/05-事業推進部"
     sections: 2
     units: 4
   - code: "D06"
     name: "経営管理部"
-    folder: "src/agents/06-management"
+    folder: "src/agents/06-経営管理部"
     sections: 3
     units: 6
   - code: "D07"
     name: "AI システム部"
-    folder: "src/agents/07-ai-systems"
+    folder: "src/agents/07-AIシステム部"
     sections: 3
     units: 6
 totals:

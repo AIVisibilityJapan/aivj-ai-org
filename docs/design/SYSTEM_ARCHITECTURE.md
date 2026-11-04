@@ -1,6 +1,6 @@
 # SYSTEM_ARCHITECTURE.md — 技術構成・データベース・実行基盤・外部連携
 
-状態: STEP 1 承認済み（2026-11-02、社長。以後の修正は同じファイルを更新。最終更新 2026-11-02）（料金・仕様・機能は契約前に公式情報で再確認すること）
+状態: STEP 1 承認済み（2026-11-02、社長。以後の修正は同じファイルを更新。最終更新 2026-11-04）（料金・仕様・機能は契約前に公式情報で再確認すること）
 ## 1. 構成
 | 層 | 採用 | 位置付け |
 |---|---|---|
@@ -32,7 +32,7 @@
 | テーブル | 主な列 | 備考 |
 |---|---|---|
 | roles | role_id(PK), role_name, type, dept_code, section, unit, service_responsibility, max_risk_tier, escalate_to, build_step, pilot, impl_status, definition(jsonb) | docs/design/AI_ROLES.csv と各 role.yaml から取込 |
-| customers | customer_id, name, kind(自治体／観光地／施設／事業者), status | テスト段階は架空 |
+| customers | customer_id, customer_code(管理番号), name, kind(民間／DMO／自治体／その他。幅広い取引先に対応する汎用の形), status | テスト段階は架空。管理番号で管理（Q-17）。外注先・見込み客の管理は STEP 6 の前に設計 |
 | projects | project_id, customer_id, service_slug, title, status, owner_role, contract_ref, due_date, priority, created_by | 案件の状態は §5 |
 | tasks | task_id, project_id, parent_task_id, workflow_step, idempotency_key(UNIQUE), role_id, status, inputs(jsonb), depends_on[], attempt, max_attempts, lease_until, due_at, risk_tier, failure_reason | 冪等キー＝project_id+workflow_step+版 |
 | deliverables | deliverable_id, project_id, task_id, kind(aiv_measurement／aio_diagnosis／report／…), version, content_ref, data_class(measured／estimated／unknown), sources(jsonb), created_by_role | 実測／推計／不明と出典を必須にする |
@@ -65,7 +65,7 @@
 **処理の流れ**
 1. 受付: 案件の必須項目・サービス区分・契約仕様参照を検証する。
 2. 分解: `src/workflows/` の定義からタスクを生成する（冪等キーで二重登録を防ぐ）。
-3. 割当: 担当役割が `implemented` かつ停止中でないことを確認。そうでなければ blocked にして人間キューへ（兼務先の提案を添える）。
+3. 割当: 担当役割が `implemented` かつ停止中でないことを確認。そうでなければ blocked にして人間キューへ（兼務先の提案を添える）。初期（STEP 6 まで）は部長 AI を経由せず、係担当へ直接割り当てる（OPERATING_RULES §1）。
 4. 起動: §7 の実行前チェックを通してから実行基盤へ依頼する。
 5. 監視: 期限・リース切れ・応答なしを検知する。
 6. 例外処理: 下表。
@@ -97,6 +97,7 @@
 
 画面: 承認待ち ／ 例外キュー ／ 案件一覧と状態 ／ 実行ログ・コスト ／ 緊急停止（全体・部・役割・案件）。
 認証は Supabase Auth。社長は全権、業務委託者は担当領域の閲覧と事前確認（最終承認権なし）。
+方針（Q-10）: 無料の範囲で用意し、案件・会社全体を一覧で把握できること。通知は Gmail。置き場所（ローカル／Notion 等の既存ツール）は 2-7 の前に比較する。Supabase Auth は Supabase を使う場合の前提。
 
 ## 9. 未確定・要検証
 
@@ -110,7 +111,10 @@
 - deliverables.data_class は成果物単位。レポートは実測・推計・不明が混在するため、主張・数値の項目単位で持つ設計に改める。
 - AIO・SEO 共通バックログのテーブルがない（backlog の追加を検討）。
 - タスクごとの risk_tier の決め方（台帳の max_risk_tier は部単位）。MASTER_PLAN §8 Q-08。
-- 通知手段・管理画面の置き場所は未定（Q-10）。Managed Agents が不適合だった場合の代替方式と判断基準も未定（Q-07）。
+- 通知手段は Gmail（決定、Q-10）。管理画面の置き場所は未定（無料の範囲。Q-10）。
+- （2026-11-04 決定 D-025）Supabase・Claude Platform（API）・Managed Agents は使わない。Claude Code（Pro）の非対話実行とファイル管理で進め、DB は今必要な要素が見えるまで後回しにする。
+- Supabase・Claude Platform（API）・Managed Agents は必須としない。2-0 で、無料でできるか（Claude Code・ファイル管理・各サービスの無料枠など）を先に検討し、難しい場合は費用と条件を示して社長が判断する（Q-06, Q-07）。DB を使わない場合は、試験項目 T2-02・T2-13 と §3・§7 の設計を見直す。
+- 取引先（顧客・見込み客・外注先）の管理場所と項目は STEP 6 の前に決める（Q-17）。
 
 **STEP 2 の最初に行う実行基盤の検証（Managed Agents）**: 1 つのエージェントで次を確認し、結果を判断ログに記録する。
 (a) 入出力・実行ログを取得できる／(b) 定期起動できる／(c) 長時間処理を継続し上限を設定できる／(d) 外部から停止できる／(e) 使用量・コストを案件単位で把握できる／(f) シークレットを安全に扱える／(g) ツール権限を役割ごとに制限できる。満たさない項目があれば、代替の実行方式を検討する。
@@ -119,6 +123,9 @@
 
 | 日付 | 変更 |
 |---|---|
+| 2026-11-04 | 2-0 の結論（API・Supabase・Managed Agents を使わない、DB は後回し）を §9 に追記（D-025） |
+| 2026-11-03 | customers に管理番号と汎用の種別を追記（Q-17）。§8 管理画面方針、§9 に 2-0 で無料での実現を先に検討する方針を追記（Q-06, Q-07, Q-10） |
+| 2026-11-02 | §6 割当に、初期は部長 AI を経由しない旨を追記（Q-03） |
 | 2026-11-02 | §9 に設計上の抜け（実行体と役割の対応、data_class の粒度、共通バックログ、risk_tier の決め方、通知・置き場所、代替方式）を追記 |
 | 2026-11-02 | STEP 2 詳細設計を追加（§3 共通DBの列定義・RLS、§5 状態遷移、§6 AI COO の動作仕様、§7 実行時チェック、§8 管理画面、§9 実行基盤の検証項目）。未設定の上限は fail closed |
 | 2026-11-02 | STEP 1 承認済みに更新 |

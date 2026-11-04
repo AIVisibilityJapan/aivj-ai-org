@@ -3,7 +3,7 @@
 **責任**: AIO 改善・実装と SEO・MEO・広告・SNS・CRM 運用を内製
 
 - 部長 AI: `AI-D04`（AIO・デジタルマーケティング部長 AI）　サービス責任: AIO 改善・実装；SEO・MEO・広告・SNS 等
-- 最大リスク区分: `mid`　構築段階: STEP4　状態: not_implemented
+- 最大リスク区分: `mid`　構築段階: STEP6　状態: not_implemented
 - 人間の確認: 顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認
 
 | 課 | 係 | 役割 ID | 担当 AI 役割 | 状態 | 初期6 | フォルダ |

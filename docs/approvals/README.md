@@ -5,4 +5,7 @@
 
 | 日付 | 対象 | 内容 | 事前確認者 | 最終承認者 | 結果 | 条件・期限 | 根拠資料 |
 |---|---|---|---|---|---|---|---|
+| 2026-11-04 | 2-0 の方針（API・Supabase・Managed Agents を使わない、DB は後回し） | 調査結果（無料でできるか）を踏まえ、このまま進める | 運営者 | 社長 | **承認** | Pro の事業利用の規約確認は継続。判断ログ D-025 | docs/decisions/README.md |
+| 2026-11-03 | 会議の決定（Q-04〜Q-18、決定シート） | 費用は都度社長確認、無料での実現を先に検討、送受信・お金の確認、管理画面・通知、事業部フォルダの日本語化 ほか | 運営者 | 社長 | **承認** | 判断ログ D-018〜D-024。Q-05・Q-18 の解釈は MASTER_PLAN §8 で確認待ち | docs/decisions/README.md |
+| 2026-11-02 | 事前確認者・段階・初期構成の決定（Q-01〜Q-03） | 事前確認者の見直し、台帳の build_step を計画に合わせる、初期は部長 AI を置かない | 運営者 | 社長 | **承認** | 判断ログ D-015〜D-017 | docs/decisions/README.md |
 | 2026-11-02 | STEP 1 設計一式 | MASTER_PLAN・AI_ROLES.csv・OPERATING_RULES・SYSTEM_ARCHITECTURE・IMPLEMENTATION_PLAN・config・サービス責任者の提案（資料からの変更 D-005, D-008, D-009 を含む） | 運営者 | 社長 | **承認** | 初期6役割の定義は案のまま、STEP 2〜4 の実装時に再確認。修正は同じファイルを更新 | docs/design/, docs/decisions/README.md |

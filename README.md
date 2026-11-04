@@ -16,7 +16,7 @@ docs/
 config/          org / risk-tiers / approval-rules / budgets / services / humans(台帳テンプレート)
 services/        12 サービス領域の定義（サービス責任者は部長 AI が兼務）
 src/
-  agents/        00-coo + 7 部。役割ごとに ai-XX-XX_<slug>/role.yaml（計 59）
+  agents/        00-全社COO + 7 部。役割ごとに ai-XX-XX_<slug>/role.yaml（計 59）
   orchestrator/  AI COO・割当・承認キュー・停止機構
   workflows/     業務フロー 7 本
   integrations/  GA4, Search Console, GBP, 広告, SNS, CRM, メール, 観光統計
@@ -42,6 +42,9 @@ scripts/  .github/
 
 | 日付 | 変更 |
 |---|---|
+| 2026-11-04 | 2-0 完了・2-2 完了を反映（判断ログ D-025） |
+| 2026-11-03 | 2026-11-03 の会議の決定を反映（判断ログ D-018〜D-024）。事業部フォルダを日本語名に変更 |
+| 2026-11-02 | Q-01〜Q-03 の決定を反映（判断ログ D-015〜D-017） |
 | 2026-11-02 | 未決事項の再編（Q-01〜Q-15）、STEP 0 の最新化、デバイス連携による直接書込の運用を追記（判断ログ D-012〜D-014） |
 | 2026-11-02 | STEP 2 の詳細設計を追加し、実装用のサブフォルダを準備（判断ログ D-011） |
 | 2026-11-02 | STEP 1 を承認済みに更新（判断ログ D-010） |

@@ -5,6 +5,17 @@
 
 | ID | 日付 | 判断 | 理由 | 関係ファイル |
 |---|---|---|---|---|
+| D-025 | 2026-11-04 | 2-0 の結論: STEP 2 は API・Supabase・Managed Agents を使わず、Claude Code（Pro）の非対話実行とファイル管理で進める。DB（2-1）は、今必要な要素が見えるまで後回し。Pro の事業利用は公式規約を社長が確認する | 追加費用なしで始められる。Managed Agents は API 前提（トークン料金＋実行中 1 時間 $0.08）。Supabase 無料プランは 1 週間無操作で停止し日次バックアップなし。Pro は消費者向け規約で、事業・本番運用には API／Team が推奨されるという解釈があり要確認 | IMPLEMENTATION_PLAN.md, SYSTEM_ARCHITECTURE.md, MASTER_PLAN.md |
+| D-024 | 2026-11-03 | 事業開発部長 AI は現状置かない（Q-18）。台帳は STEP 6 扱い。取引先は管理番号を付けて管理し、民間・DMO・自治体など汎用の形にする。管理場所は STEP 6 の前に決める（Q-17） | 必要になった時点で検討する方針。取引先の種別が幅広いため | AI_ROLES.csv, SYSTEM_ARCHITECTURE.md, MASTER_PLAN.md |
+| D-023 | 2026-11-03 | 外部技術顧問は現状考えない（Q-12）。業務委託者が関与する前に専門家へ確認し、関係する場合は都度共有（Q-13）。KPI は組み立て後に Claude が提案（Q-14）。初期6役割の定義案は案のまま承認（Q-15）。AI システム部は現状維持（Q-16） | 社長の決定（決定シート） | MASTER_PLAN.md, docs/compliance/checklist.md |
+| D-022 | 2026-11-03 | 通知は Gmail。管理画面は無料の範囲で、案件・会社全体を一覧で把握できるものを用意（Q-10） | 追加費用を避けつつ、全体を一覧で見られるようにするため。置き場所は 2-7 の前に比較 | SYSTEM_ARCHITECTURE.md, IMPLEMENTATION_PLAN.md |
+| D-021 | 2026-11-03 | 当面、対外の送信は事前確認、受信は内容を共有し対応を報告。お金に関することはすべて社長確認（Q-08, Q-11）。停止・再開の権限者と代行者は固定せず都度確認（Q-09） | 初期は運用を人間が把握するため。基準の数値化は実例を見てから | OPERATING_RULES.md, config/approval-rules.yaml |
+| D-020 | 2026-11-03 | Claude Platform（API）・Supabase・Managed Agents は、無料でできないかを先に検討し、難しい場合は費用と条件を示して社長が判断（Q-06, Q-07）。2-0 の内容を変更 | 必要性と費用を見極めてから契約するため | IMPLEMENTATION_PLAN.md, SYSTEM_ARCHITECTURE.md |
+| D-019 | 2026-11-03 | 暫定上限の数値は設定せず、費用が掛かる場合は都度社長確認（Q-04）。実装対象は AI COO とダミー役割のみ、プランは現状のまま（Q-05。記号 C の記入を反映）。無償診断レポートは可能な限り API なしで進める | 費用を社長が直接管理するため。上限未設定は起動しない設計（fail closed）と整合 | config/budgets.yaml, config/approval-rules.yaml, IMPLEMENTATION_PLAN.md |
+| D-018 | 2026-11-03 | src/agents 直下の事業部フォルダを英語名から日本語名に変更（例: 01-営業部）。役割フォルダ（ai-XX-XX_英語スラッグ）は変更しない。D-002 を事業部フォルダに限り変更 | 社長の指示。役割フォルダは台帳・コードとの対応のため英語スラッグを維持 | src/agents/, AI_ROLES.csv, config/org.yaml |
+| D-017 | 2026-11-02 | 初期（STEP 2〜5）は部長 AI を置かず、AI COO が係担当へ直接割り当てる。部長 AI は STEP 6 で追加（Q-03） | 初期6役割を最小に保ち、1 案件を通して実測するため | OPERATING_RULES.md, SYSTEM_ARCHITECTURE.md |
+| D-016 | 2026-11-02 | 台帳の build_step を計画に合わせる。初期6役割以外は STEP 6、事業開発部は STEP 5（Q-02） | 計画（STEP 4＝初期6役割、他部門＝STEP 6）と台帳の食い違いを解消するため | AI_ROLES.csv, 各 role.yaml |
+| D-015 | 2026-11-02 | AI の本番反映・権限付与の事前確認は当面は社長が直接行う（外部技術顧問の起用後に移行）。新規支出の事前確認者は経営管理・総務担当（Q-01） | AI は事前確認者にできないため。技術顧問は未起用 | config/approval-rules.yaml |
 | D-014 | 2026-11-02 | 手元フォルダへの書込を、このチャットのデバイス連携で直接行う（zip の入れ替えを不要にする）。書込後は運営者が git で GitHub に反映する | 手作業の入れ替えをなくし、版の取り違えを防ぐため | README.md |
 | D-013 | 2026-11-02 | Claude Code のレビューと本チャットのレビューを統合し、未決事項を MASTER_PLAN §8 の Q-01〜Q-15 に集約。更新漏れ（STEP 0、サービス責任の表記）を修正。Claude Code が読んだ手元は古い版だった | 抜けと矛盾を 1 か所で管理するため | MASTER_PLAN.md, IMPLEMENTATION_PLAN.md |
 | D-012 | 2026-11-02 | Claude Code は現在の Pro プランで使用する（D-009 の補足。アップグレードは必要時） | Pro で Claude Code を利用できるため | IMPLEMENTATION_PLAN.md |

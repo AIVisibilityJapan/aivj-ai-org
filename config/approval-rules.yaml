@@ -1,13 +1,18 @@
-# 要見直し（2026-11-02 レビュー。MASTER_PLAN §8 Q-01）: 「AI システム部」は AI のため事前確認者にできない。「担当者」は特定する。請求書の送付・返金などの承認行為の追加は Q-11。
 # 人間の承認が必須の行為。役割別の担当割当は実装時に具体化する。
 # 承認なしで実行できる経路を作らない（承認前は実行を禁止）。
+# 2026-11-02 見直し済み（MASTER_PLAN §8 Q-01）: AI は事前確認者にしない。請求書の送付・返金などの行為の追加は Q-11（未決）。
+# 2026-11-03 追記（Q-04, Q-08, Q-11）: お金に関することはすべて社長確認。費用が発生する AI 処理は都度社長確認。当面は対外送信を事前確認、受信は社長へ共有。
 actions:
   - {action: 契約締結,                 precheck: 経営管理・総務担当,       final_approver: 社長}
   - {action: 発注・仕様変更,           precheck: PM・外注管理担当,         final_approver: 社長}
-  - {action: 新規支出,                 precheck: 担当者,                   final_approver: 社長}
+  - {action: 新規支出,                 precheck: 経営管理・総務担当,       final_approver: 社長}
   - {action: 顧客への確約・値引き・契約条件変更, precheck: 営業担当,       final_approver: 社長}
-  - {action: 重要な対外送信・重要提案, precheck: 営業担当,                 final_approver: 社長}
-  - {action: 権限の付与・拡大,         precheck: AI システム部,            final_approver: 社長}
-  - {action: AI 社員の本番反映,        precheck: AI システム部,            final_approver: 社長}
+  - {action: 重要な対外送信・重要提案, precheck: 営業担当,                 final_approver: 社長, note: 当面は重要度に関わらず対外送信は事前確認（Q-08）}
+  - {action: 権限の付与・拡大,         precheck: 社長（直接確認）,         final_approver: 社長, note: 外部技術顧問を起用したら同顧問が事前確認}
+  - {action: AI 社員の本番反映,        precheck: 社長（直接確認）,         final_approver: 社長, note: 外部技術顧問を起用したら同顧問が事前確認}
   - {action: 顧客秘密情報の取扱い開始, precheck: 経営管理・総務担当,       final_approver: 社長}
   - {action: 重要な新商品・新手法の採用, precheck: 事業開発・品質担当,     final_approver: 社長, note: 自身の開発案件は外部専門家が独立レビュー}
+  - {action: お金に関するすべての行為（支出・請求・返金・値引き等）, precheck: 社長（直接確認）, final_approver: 社長, note: 当面すべて社長確認（Q-08, Q-11）}
+  - {action: 費用が発生する AI 処理（API 利用など）, precheck: 社長（直接確認）, final_approver: 社長, note: 上限の数値は未設定のまま。都度確認（Q-04）}
+reporting:
+  - {event: 外部からの受信（メール・問合せ等）, to: 社長, content: 内容の共有と対応案の報告, note: Q-08}

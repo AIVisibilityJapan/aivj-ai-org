@@ -10,7 +10,7 @@ service_responsibility: null
 max_risk_tier: "mid"
 human_checkpoint: "顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認"
 escalate_to: "AI-D04"
-build_step: "STEP4"
+build_step: "STEP6"
 pilot: false
 impl_status: "not_implemented"
 

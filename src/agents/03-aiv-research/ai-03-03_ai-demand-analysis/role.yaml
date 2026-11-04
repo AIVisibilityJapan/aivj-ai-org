@@ -10,7 +10,7 @@ service_responsibility: null
 max_risk_tier: "low"
 human_checkpoint: "重要レポートは人間レビュー+経営管理部の独立監査"
 escalate_to: "AI-D03"
-build_step: "STEP4"
+build_step: "STEP6"
 pilot: false
 impl_status: "not_implemented"
 

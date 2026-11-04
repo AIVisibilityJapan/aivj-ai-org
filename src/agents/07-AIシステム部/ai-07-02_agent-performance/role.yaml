@@ -1,0 +1,26 @@
+# 役割定義。全体一覧の正本は docs/design/AI_ROLES.csv
+role_id: "AI-07-02"
+role_name: "AI 性能改善 AI"
+type: "係担当 AI"
+dept_code: "D07"
+dept: "AI システム部"
+section: "AI エージェント開発課"
+unit: "AI 社員性能評価係"
+service_responsibility: null
+max_risk_tier: "high"
+human_checkpoint: "権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長"
+escalate_to: "AI-D07"
+build_step: "STEP6"
+pilot: false
+impl_status: "not_implemented"
+
+# 以下は build_step の段階で具体化する（未定義のまま実装しない）
+definition:
+  purpose: null
+  trigger: null
+  inputs: []
+  outputs: []
+  tools: []
+  permissions: []
+  stop_conditions: []
+  evaluation: []

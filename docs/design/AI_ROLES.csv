@@ -1,60 +1,60 @@
 ﻿role_id,type,dept_code,dept,section_ka,unit_kakari,role_name,service_responsibility,max_risk_tier,human_checkpoint,escalate_to,build_step,pilot_6,impl_status,folder
-AI-000,AI COO,-,全社,-,-,AI COO,優先順位・部門間調整,high,社長の共有キューへ通知。契約上の指示権・決裁権なし,社長,STEP2,Y,definition_drafted,src/agents/00-coo/ai-000_coo
-AI-D01,部長 AI,D01,営業部,-,-,営業部長 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-000,STEP6,N,not_implemented,src/agents/01-sales/ai-d01_head
-AI-01-01,係担当 AI,D01,営業部,営業企画・マーケティング課,市場調査・営業戦略係,市場調査 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-sales/ai-01-01_market-research
-AI-01-02,係担当 AI,D01,営業部,営業企画・マーケティング課,営業先発掘係,営業リスト開発 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-sales/ai-01-02_lead-list-development
-AI-01-03,係担当 AI,D01,営業部,営業・顧客成功課,新規営業係,営業実行 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-sales/ai-01-03_sales-execution
-AI-01-04,係担当 AI,D01,営業部,営業・顧客成功課,顧客成功・継続契約係,カスタマーサクセス AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-sales/ai-01-04_customer-success
-AI-01-05,係担当 AI,D01,営業部,企画提案課,提案企画係,企画立案 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-sales/ai-01-05_proposal-planning
-AI-01-06,係担当 AI,D01,営業部,企画提案課,提案書・見積作成係,提案資料制作 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-sales/ai-01-06_proposal-document
-AI-01-07,係担当 AI,D01,営業部,公募・入札課,公募探索・資格審査係,公募探索 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-sales/ai-01-07_tender-search
-AI-01-08,係担当 AI,D01,営業部,公募・入札課,応募・入札対応係,応募書類制作 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-sales/ai-01-08_bid-document
-AI-D02,部長 AI,D02,事業開発部,-,-,事業開発部長 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-000,STEP5,N,not_implemented,src/agents/02-business-development/ai-d02_head
-AI-02-01,係担当 AI,D02,事業開発部,サービス企画課,新規サービス探索係,新規事業探索 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-business-development/ai-02-01_new-service-discovery
-AI-02-02,係担当 AI,D02,事業開発部,サービス企画課,商品・収益モデル設計係,商品設計 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-business-development/ai-02-02_product-design
-AI-02-03,係担当 AI,D02,事業開発部,AIV 分析手法開発課,AIV 測定技術開発係,AIV 技術開発 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-business-development/ai-02-03_aiv-tech-dev
-AI-02-04,係担当 AI,D02,事業開発部,AIV 分析手法開発課,AIV 評価指標開発係,AIV 評価開発 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-business-development/ai-02-04_aiv-metrics-dev
-AI-02-05,係担当 AI,D02,事業開発部,AIO 最適化手法開発課,AIO 最適化技術研究係,AIO 技術開発 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-business-development/ai-02-05_aio-tech-dev
-AI-02-06,係担当 AI,D02,事業開発部,AIO 最適化手法開発課,AIO 効果検証手法係,AIO 効果検証 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-business-development/ai-02-06_aio-effect-validation
-AI-02-07,係担当 AI,D02,事業開発部,事業化・実証課,実証実験係,PoC 実証 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-business-development/ai-02-07_poc-validation
-AI-02-08,係担当 AI,D02,事業開発部,事業化・実証課,商品化・標準化係,事業化推進 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-business-development/ai-02-08_commercialization
-AI-D03,部長 AI,D03,AIV・調査分析部,-,-,AIV・調査分析部長 AI,AIV・AI 需要／市場分析,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-000,STEP4,N,not_implemented,src/agents/03-aiv-research/ai-d03_head
-AI-03-01,係担当 AI,D03,AIV・調査分析部,AIV 測定・分析課,地域 AIV 分析係,地域 AIV 分析 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP4,Y,definition_drafted,src/agents/03-aiv-research/ai-03-01_regional-aiv-analysis
-AI-03-02,係担当 AI,D03,AIV・調査分析部,AIV 測定・分析課,サイト AIV・モニタリング係,サイト AIV 分析 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP4,N,not_implemented,src/agents/03-aiv-research/ai-03-02_site-aiv-analysis
-AI-03-03,係担当 AI,D03,AIV・調査分析部,AI 需要・データ分析課,AI 検索需要分析係,AI 需要分析 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP4,N,not_implemented,src/agents/03-aiv-research/ai-03-03_ai-demand-analysis
-AI-03-04,係担当 AI,D03,AIV・調査分析部,AI 需要・データ分析課,観光・市場データ分析係,市場分析 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP4,N,not_implemented,src/agents/03-aiv-research/ai-03-04_market-analysis
-AI-03-05,係担当 AI,D03,AIV・調査分析部,レポート制作課,レポート構成・執筆係,レポート制作 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP4,Y,definition_drafted,src/agents/03-aiv-research/ai-03-05_report-production
-AI-03-06,係担当 AI,D03,AIV・調査分析部,レポート制作課,図表・資料制作係,データ可視化 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP4,N,not_implemented,src/agents/03-aiv-research/ai-03-06_data-visualization
-AI-D04,部長 AI,D04,AIO・デジタルマーケティング部,-,-,AIO・デジタルマーケティング部長 AI,AIO 改善・実装；SEO・MEO・広告・SNS 等,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-000,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-d04_head
-AI-04-01,係担当 AI,D04,AIO・デジタルマーケティング部,AIO 改善・実装課,AIO 診断・戦略係,AIO 診断 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,Y,definition_drafted,src/agents/04-aio-digital-marketing/ai-04-01_aio-diagnosis
-AI-04-02,係担当 AI,D04,AIO・デジタルマーケティング部,AIO 改善・実装課,AIO コンテンツ改善係,AIO コンテンツ AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-02_aio-content
-AI-04-03,係担当 AI,D04,AIO・デジタルマーケティング部,AIO 改善・実装課,AI 検索情報設計係,AI 検索情報設計 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-03_ai-search-info-architecture
-AI-04-04,係担当 AI,D04,AIO・デジタルマーケティング部,SEO 課,技術 SEO 診断・改善設計係,技術 SEO 分析 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-04_technical-seo
-AI-04-05,係担当 AI,D04,AIO・デジタルマーケティング部,SEO 課,コンテンツ SEO・検索順位運用係,SEO 運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-05_seo-operations
-AI-04-06,係担当 AI,D04,AIO・デジタルマーケティング部,MEO・口コミ課,GBP・MEO 企画運用係,MEO 運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-06_meo-operations
-AI-04-07,係担当 AI,D04,AIO・デジタルマーケティング部,MEO・口コミ課,口コミ・地域情報管理係,口コミ管理 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-07_review-management
-AI-04-08,係担当 AI,D04,AIO・デジタルマーケティング部,デジタル広告課,広告配信・予算管理係,広告運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-08_ad-operations
-AI-04-09,係担当 AI,D04,AIO・デジタルマーケティング部,デジタル広告課,広告企画・配信最適化係,広告最適化 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-09_ad-optimization
-AI-04-10,係担当 AI,D04,AIO・デジタルマーケティング部,SNS・CRM 課,SNS アカウント運用係,SNS 運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-10_sns-operations
-AI-04-11,係担当 AI,D04,AIO・デジタルマーケティング部,SNS・CRM 課,CRM・顧客コミュニケーション係,CRM 運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-11_crm-operations
-AI-04-12,係担当 AI,D04,AIO・デジタルマーケティング部,アクセス解析・改善課,アクセス・行動分析係,GA4・行動分析 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-12_ga4-behavior-analysis
-AI-04-13,係担当 AI,D04,AIO・デジタルマーケティング部,アクセス解析・改善課,CV 改善・効果検証係,CRO・効果検証 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,N,not_implemented,src/agents/04-aio-digital-marketing/ai-04-13_cro-validation
-AI-D05,部長 AI,D05,事業推進部,-,-,事業推進部長 AI,Web 制作・観光戦略等（外注統括）,high,発注・仕様変更は PM 担当確認→社長承認,AI-000,STEP6,N,not_implemented,src/agents/05-project-management/ai-d05_head
-AI-05-01,係担当 AI,D05,事業推進部,プロジェクト管理課,案件進行管理係,PMO 管理 AI,-,high,発注・仕様変更は PM 担当確認→社長承認,AI-D05,STEP6,N,not_implemented,src/agents/05-project-management/ai-05-01_pmo-management
-AI-05-02,係担当 AI,D05,事業推進部,プロジェクト管理課,顧客調整・納品管理係,顧客・納品管理 AI,-,high,発注・仕様変更は PM 担当確認→社長承認,AI-D05,STEP6,N,not_implemented,src/agents/05-project-management/ai-05-02_client-delivery-management
-AI-05-03,係担当 AI,D05,事業推進部,外注・パートナー管理課,外注先調査・選定係,パートナー選定 AI,-,high,発注・仕様変更は PM 担当確認→社長承認,AI-D05,STEP6,N,not_implemented,src/agents/05-project-management/ai-05-03_partner-selection
-AI-05-04,係担当 AI,D05,事業推進部,外注・パートナー管理課,発注・履行管理係,外注管理 AI,-,high,発注・仕様変更は PM 担当確認→社長承認,AI-D05,STEP6,N,not_implemented,src/agents/05-project-management/ai-05-04_outsourcing-management
-AI-D06,部長 AI,D06,経営管理部,-,-,経営管理部長 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-000,STEP4,N,not_implemented,src/agents/06-management/ai-d06_head
-AI-06-01,係担当 AI,D06,経営管理部,財務・経理課,請求・入金管理係,請求管理 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP4,N,not_implemented,src/agents/06-management/ai-06-01_billing-management
-AI-06-02,係担当 AI,D06,経営管理部,財務・経理課,収益・資金管理係,管理会計 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP4,N,not_implemented,src/agents/06-management/ai-06-02_management-accounting
-AI-06-03,係担当 AI,D06,経営管理部,法務・総務課,契約・法務係,契約法務支援 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP4,N,not_implemented,src/agents/06-management/ai-06-03_contract-legal-support
-AI-06-04,係担当 AI,D06,経営管理部,法務・総務課,総務・文書管理係,総務管理 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP4,N,not_implemented,src/agents/06-management/ai-06-04_general-affairs
-AI-06-05,係担当 AI,D06,経営管理部,品質・リスク管理課,分析品質・再現性検証係,分析監査 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP4,N,not_implemented,src/agents/06-management/ai-06-05_analysis-audit
-AI-06-06,係担当 AI,D06,経営管理部,品質・リスク管理課,成果物・業務リスク監査係,品質・リスク監査 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP4,Y,definition_drafted,src/agents/06-management/ai-06-06_quality-risk-audit
-AI-D07,部長 AI,D07,AI システム部,-,-,AI システム部長 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-000,STEP3,N,not_implemented,src/agents/07-ai-systems/ai-d07_head
-AI-07-01,係担当 AI,D07,AI システム部,AI エージェント開発課,AI 社員設計・開発係,AI エージェント開発 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP3,Y,definition_drafted,src/agents/07-ai-systems/ai-07-01_agent-development
-AI-07-02,係担当 AI,D07,AI システム部,AI エージェント開発課,AI 社員性能評価係,AI 性能改善 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP3,N,not_implemented,src/agents/07-ai-systems/ai-07-02_agent-performance
-AI-07-03,係担当 AI,D07,AI システム部,システム運用・連携課,AI 稼働・障害管理係,システム運用 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP3,N,not_implemented,src/agents/07-ai-systems/ai-07-03_system-operations
-AI-07-04,係担当 AI,D07,AI システム部,システム運用・連携課,API・システム連携係,システム連携 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP3,N,not_implemented,src/agents/07-ai-systems/ai-07-04_system-integration
-AI-07-05,係担当 AI,D07,AI システム部,情報管理・セキュリティ課,データ・権限管理係,データ統制 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP3,N,not_implemented,src/agents/07-ai-systems/ai-07-05_data-governance
-AI-07-06,係担当 AI,D07,AI システム部,情報管理・セキュリティ課,セキュリティ監査係,セキュリティ監査 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP3,N,not_implemented,src/agents/07-ai-systems/ai-07-06_security-audit
+AI-000,AI COO,-,全社,-,-,AI COO,優先順位・部門間調整,high,社長の共有キューへ通知。契約上の指示権・決裁権なし,社長,STEP2,Y,definition_drafted,src/agents/00-全社COO/ai-000_coo
+AI-D01,部長 AI,D01,営業部,-,-,営業部長 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-000,STEP6,N,not_implemented,src/agents/01-営業部/ai-d01_head
+AI-01-01,係担当 AI,D01,営業部,営業企画・マーケティング課,市場調査・営業戦略係,市場調査 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-営業部/ai-01-01_market-research
+AI-01-02,係担当 AI,D01,営業部,営業企画・マーケティング課,営業先発掘係,営業リスト開発 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-営業部/ai-01-02_lead-list-development
+AI-01-03,係担当 AI,D01,営業部,営業・顧客成功課,新規営業係,営業実行 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-営業部/ai-01-03_sales-execution
+AI-01-04,係担当 AI,D01,営業部,営業・顧客成功課,顧客成功・継続契約係,カスタマーサクセス AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-営業部/ai-01-04_customer-success
+AI-01-05,係担当 AI,D01,営業部,企画提案課,提案企画係,企画立案 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-営業部/ai-01-05_proposal-planning
+AI-01-06,係担当 AI,D01,営業部,企画提案課,提案書・見積作成係,提案資料制作 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-営業部/ai-01-06_proposal-document
+AI-01-07,係担当 AI,D01,営業部,公募・入札課,公募探索・資格審査係,公募探索 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-営業部/ai-01-07_tender-search
+AI-01-08,係担当 AI,D01,営業部,公募・入札課,応募・入札対応係,応募書類制作 AI,-,mid,外部送信・見積提示は人間確認/重要条件は社長承認,AI-D01,STEP6,N,not_implemented,src/agents/01-営業部/ai-01-08_bid-document
+AI-D02,部長 AI,D02,事業開発部,-,-,事業開発部長 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-000,STEP6,N,not_implemented,src/agents/02-事業開発部/ai-d02_head
+AI-02-01,係担当 AI,D02,事業開発部,サービス企画課,新規サービス探索係,新規事業探索 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-事業開発部/ai-02-01_new-service-discovery
+AI-02-02,係担当 AI,D02,事業開発部,サービス企画課,商品・収益モデル設計係,商品設計 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-事業開発部/ai-02-02_product-design
+AI-02-03,係担当 AI,D02,事業開発部,AIV 分析手法開発課,AIV 測定技術開発係,AIV 技術開発 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-事業開発部/ai-02-03_aiv-tech-dev
+AI-02-04,係担当 AI,D02,事業開発部,AIV 分析手法開発課,AIV 評価指標開発係,AIV 評価開発 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-事業開発部/ai-02-04_aiv-metrics-dev
+AI-02-05,係担当 AI,D02,事業開発部,AIO 最適化手法開発課,AIO 最適化技術研究係,AIO 技術開発 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-事業開発部/ai-02-05_aio-tech-dev
+AI-02-06,係担当 AI,D02,事業開発部,AIO 最適化手法開発課,AIO 効果検証手法係,AIO 効果検証 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-事業開発部/ai-02-06_aio-effect-validation
+AI-02-07,係担当 AI,D02,事業開発部,事業化・実証課,実証実験係,PoC 実証 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-事業開発部/ai-02-07_poc-validation
+AI-02-08,係担当 AI,D02,事業開発部,事業化・実証課,商品化・標準化係,事業化推進 AI,-,low,商品化・新手法の採用は人間(事業開発・品質担当)確認→社長承認,AI-D02,STEP5,N,not_implemented,src/agents/02-事業開発部/ai-02-08_commercialization
+AI-D03,部長 AI,D03,AIV・調査分析部,-,-,AIV・調査分析部長 AI,AIV・AI 需要／市場分析,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-000,STEP6,N,not_implemented,src/agents/03-AIV調査分析部/ai-d03_head
+AI-03-01,係担当 AI,D03,AIV・調査分析部,AIV 測定・分析課,地域 AIV 分析係,地域 AIV 分析 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP4,Y,definition_drafted,src/agents/03-AIV調査分析部/ai-03-01_regional-aiv-analysis
+AI-03-02,係担当 AI,D03,AIV・調査分析部,AIV 測定・分析課,サイト AIV・モニタリング係,サイト AIV 分析 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP6,N,not_implemented,src/agents/03-AIV調査分析部/ai-03-02_site-aiv-analysis
+AI-03-03,係担当 AI,D03,AIV・調査分析部,AI 需要・データ分析課,AI 検索需要分析係,AI 需要分析 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP6,N,not_implemented,src/agents/03-AIV調査分析部/ai-03-03_ai-demand-analysis
+AI-03-04,係担当 AI,D03,AIV・調査分析部,AI 需要・データ分析課,観光・市場データ分析係,市場分析 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP6,N,not_implemented,src/agents/03-AIV調査分析部/ai-03-04_market-analysis
+AI-03-05,係担当 AI,D03,AIV・調査分析部,レポート制作課,レポート構成・執筆係,レポート制作 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP4,Y,definition_drafted,src/agents/03-AIV調査分析部/ai-03-05_report-production
+AI-03-06,係担当 AI,D03,AIV・調査分析部,レポート制作課,図表・資料制作係,データ可視化 AI,-,low,重要レポートは人間レビュー+経営管理部の独立監査,AI-D03,STEP6,N,not_implemented,src/agents/03-AIV調査分析部/ai-03-06_data-visualization
+AI-D04,部長 AI,D04,AIO・デジタルマーケティング部,-,-,AIO・デジタルマーケティング部長 AI,AIO 改善・実装；SEO・MEO・広告・SNS 等,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-000,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-d04_head
+AI-04-01,係担当 AI,D04,AIO・デジタルマーケティング部,AIO 改善・実装課,AIO 診断・戦略係,AIO 診断 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP4,Y,definition_drafted,src/agents/04-AIOデジタルマーケティング部/ai-04-01_aio-diagnosis
+AI-04-02,係担当 AI,D04,AIO・デジタルマーケティング部,AIO 改善・実装課,AIO コンテンツ改善係,AIO コンテンツ AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-02_aio-content
+AI-04-03,係担当 AI,D04,AIO・デジタルマーケティング部,AIO 改善・実装課,AI 検索情報設計係,AI 検索情報設計 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-03_ai-search-info-architecture
+AI-04-04,係担当 AI,D04,AIO・デジタルマーケティング部,SEO 課,技術 SEO 診断・改善設計係,技術 SEO 分析 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-04_technical-seo
+AI-04-05,係担当 AI,D04,AIO・デジタルマーケティング部,SEO 課,コンテンツ SEO・検索順位運用係,SEO 運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-05_seo-operations
+AI-04-06,係担当 AI,D04,AIO・デジタルマーケティング部,MEO・口コミ課,GBP・MEO 企画運用係,MEO 運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-06_meo-operations
+AI-04-07,係担当 AI,D04,AIO・デジタルマーケティング部,MEO・口コミ課,口コミ・地域情報管理係,口コミ管理 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-07_review-management
+AI-04-08,係担当 AI,D04,AIO・デジタルマーケティング部,デジタル広告課,広告配信・予算管理係,広告運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-08_ad-operations
+AI-04-09,係担当 AI,D04,AIO・デジタルマーケティング部,デジタル広告課,広告企画・配信最適化係,広告最適化 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-09_ad-optimization
+AI-04-10,係担当 AI,D04,AIO・デジタルマーケティング部,SNS・CRM 課,SNS アカウント運用係,SNS 運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-10_sns-operations
+AI-04-11,係担当 AI,D04,AIO・デジタルマーケティング部,SNS・CRM 課,CRM・顧客コミュニケーション係,CRM 運用 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-11_crm-operations
+AI-04-12,係担当 AI,D04,AIO・デジタルマーケティング部,アクセス解析・改善課,アクセス・行動分析係,GA4・行動分析 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-12_ga4-behavior-analysis
+AI-04-13,係担当 AI,D04,AIO・デジタルマーケティング部,アクセス解析・改善課,CV 改善・効果検証係,CRO・効果検証 AI,-,mid,顧客権限・同意範囲内のみ運用/重要投稿・予算変更は承認,AI-D04,STEP6,N,not_implemented,src/agents/04-AIOデジタルマーケティング部/ai-04-13_cro-validation
+AI-D05,部長 AI,D05,事業推進部,-,-,事業推進部長 AI,Web 制作・観光戦略等（外注統括）,high,発注・仕様変更は PM 担当確認→社長承認,AI-000,STEP6,N,not_implemented,src/agents/05-事業推進部/ai-d05_head
+AI-05-01,係担当 AI,D05,事業推進部,プロジェクト管理課,案件進行管理係,PMO 管理 AI,-,high,発注・仕様変更は PM 担当確認→社長承認,AI-D05,STEP6,N,not_implemented,src/agents/05-事業推進部/ai-05-01_pmo-management
+AI-05-02,係担当 AI,D05,事業推進部,プロジェクト管理課,顧客調整・納品管理係,顧客・納品管理 AI,-,high,発注・仕様変更は PM 担当確認→社長承認,AI-D05,STEP6,N,not_implemented,src/agents/05-事業推進部/ai-05-02_client-delivery-management
+AI-05-03,係担当 AI,D05,事業推進部,外注・パートナー管理課,外注先調査・選定係,パートナー選定 AI,-,high,発注・仕様変更は PM 担当確認→社長承認,AI-D05,STEP6,N,not_implemented,src/agents/05-事業推進部/ai-05-03_partner-selection
+AI-05-04,係担当 AI,D05,事業推進部,外注・パートナー管理課,発注・履行管理係,外注管理 AI,-,high,発注・仕様変更は PM 担当確認→社長承認,AI-D05,STEP6,N,not_implemented,src/agents/05-事業推進部/ai-05-04_outsourcing-management
+AI-D06,部長 AI,D06,経営管理部,-,-,経営管理部長 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-000,STEP6,N,not_implemented,src/agents/06-経営管理部/ai-d06_head
+AI-06-01,係担当 AI,D06,経営管理部,財務・経理課,請求・入金管理係,請求管理 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP6,N,not_implemented,src/agents/06-経営管理部/ai-06-01_billing-management
+AI-06-02,係担当 AI,D06,経営管理部,財務・経理課,収益・資金管理係,管理会計 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP6,N,not_implemented,src/agents/06-経営管理部/ai-06-02_management-accounting
+AI-06-03,係担当 AI,D06,経営管理部,法務・総務課,契約・法務係,契約法務支援 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP6,N,not_implemented,src/agents/06-経営管理部/ai-06-03_contract-legal-support
+AI-06-04,係担当 AI,D06,経営管理部,法務・総務課,総務・文書管理係,総務管理 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP6,N,not_implemented,src/agents/06-経営管理部/ai-06-04_general-affairs
+AI-06-05,係担当 AI,D06,経営管理部,品質・リスク管理課,分析品質・再現性検証係,分析監査 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP6,N,not_implemented,src/agents/06-経営管理部/ai-06-05_analysis-audit
+AI-06-06,係担当 AI,D06,経営管理部,品質・リスク管理課,成果物・業務リスク監査係,品質・リスク監査 AI,-,high,請求・契約は総務担当確認/重大品質問題は社長へ直接報告,AI-D06,STEP4,Y,definition_drafted,src/agents/06-経営管理部/ai-06-06_quality-risk-audit
+AI-D07,部長 AI,D07,AI システム部,-,-,AI システム部長 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-000,STEP6,N,not_implemented,src/agents/07-AIシステム部/ai-d07_head
+AI-07-01,係担当 AI,D07,AI システム部,AI エージェント開発課,AI 社員設計・開発係,AI エージェント開発 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP3,Y,definition_drafted,src/agents/07-AIシステム部/ai-07-01_agent-development
+AI-07-02,係担当 AI,D07,AI システム部,AI エージェント開発課,AI 社員性能評価係,AI 性能改善 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP6,N,not_implemented,src/agents/07-AIシステム部/ai-07-02_agent-performance
+AI-07-03,係担当 AI,D07,AI システム部,システム運用・連携課,AI 稼働・障害管理係,システム運用 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP6,N,not_implemented,src/agents/07-AIシステム部/ai-07-03_system-operations
+AI-07-04,係担当 AI,D07,AI システム部,システム運用・連携課,API・システム連携係,システム連携 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP6,N,not_implemented,src/agents/07-AIシステム部/ai-07-04_system-integration
+AI-07-05,係担当 AI,D07,AI システム部,情報管理・セキュリティ課,データ・権限管理係,データ統制 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP6,N,not_implemented,src/agents/07-AIシステム部/ai-07-05_data-governance
+AI-07-06,係担当 AI,D07,AI システム部,情報管理・セキュリティ課,セキュリティ監査係,セキュリティ監査 AI,-,high,権限変更・本番反映は人間承認/重大障害は外部技術顧問+社長,AI-D07,STEP6,N,not_implemented,src/agents/07-AIシステム部/ai-07-06_security-audit
