@@ -15,27 +15,25 @@ build_step: STEP4
 pilot: true
 impl_status: definition_drafted
 definition:
-  definition_status: draft（レビュー待ち。未承認）
-  purpose: 指定された自治体・観光地・施設について、AI 検索での出現・引用・推薦状況を測定し、競合・多言語比較を行う。AIO 施策の設計・実装は行わない。
+  definition_status: 案（STEP 4 試験で検証済み。社長の承認待ち。台帳の impl_status は承認まで変えない）
+  purpose: 既存の正式データ（出現率・APA の Mart／report_values）を、読み取り専用で参照し、指定された自治体の値をレポート用に整理する。測定そのものは行わない（測定は担当者が既存の方法で行う）。
   trigger:
-  - AI COO からの測定タスク割当
+  - AI COO からの自治体指定のタスク割当
   inputs:
-  - 対象地域・施設・サイト
-  - 測定条件（対象 AI・設問・言語）
-  - 公開情報（試験段階は公開情報・架空データのみ）
+  - 自治体の指定（名称または municipality_id）
+  - 正式データ（report_values。版・SHA を src/aiv/pins.yaml で固定）
+  - 集計単位（出現率 1,741／ランキング 1,719）
   outputs:
-  - AIV 測定結果（出現・引用・推薦状況）
-  - 競合・多言語比較
-  - 測定条件の記録（対象 AI・日時・設問・言語）
-  - 実測／推計／不明の区分付きデータ
-  - AIO 診断 AI への引継ぎ
+  - '整理済みの値（正式データの文字をそのまま。0%・欠損の状態付き: FORMAL_VALUE／UNVERIFIED_ZERO／NOT_AVAILABLE）'
+  - 参照元の記録（ファイル・SHA・レコードの版）
+  - AIO 診断 AI・レポート制作 AI への引継ぎ
   tools:
-  - 測定対象 AI への問い合わせ手段（要決定）
-  - 公開情報の検索・取得
+  - src/aiv/values_reader.py（読み取り専用・外部通信なし）
   - 共通DB（deliverables, run_logs）
   permissions:
-  - 'write: deliverables（AIV 測定）, run_logs'
-  - '禁止: 顧客サイト・アカウントの変更、外部送信'
+  - 'read: データ/private/05-測定データ の 01_AI_Visibility・02_REPORTS_AND_FMT（読み取りのみ）'
+  - 'write: 整理結果（出力フォルダ）、run_logs'
+  - '禁止: 顧客サイト・アカウントの変更、外部送信、正式データへの書込'
   handoff_from:
   - AI COO
   handoff_to:
@@ -44,10 +42,10 @@ definition:
   human_checkpoints:
   - 重要案件の測定結果は事業開発・品質担当が確認
   stop_conditions:
-  - 測定条件を保存できない
-  - 出典・データの欠落
-  - 利用規約上許可されない取得手段が必要
-  - 回数・費用の上限超過
+  - 値ファイルの SHA が固定と違う、または固定が未設定
+  - 自治体が見つからない・複数ある（推測で別の自治体を使わない）
+  - 根拠データの内部の食い違い
+  - 参照元の版・SHA を記録できない
   - 設定/budgets.yaml の案件別上限（費用・実行時間・再試行回数。未設定のうちは本番稼働させない）
   forbidden:
   - データ・出典の捏造
@@ -57,19 +55,21 @@ definition:
   - 版数と SHA を固定せず「最新」を自動探索して参照すること（不一致時は停止）
   - 件数や名称の一致だけで APA（1,719 対象）と出現率（1,741 自治体）の対象集合を結合すること
   - 欠損（NO_FORMAL_ROW・NOT_APPLICABLE・NOT_AVAILABLE）を 0% として扱うこと
+  - 測定対象 AI への問い合わせ・API 送信・再測定・再計算（D-025・D-037）
+  - 値を計算・推測・補完して作ること（『―』や空欄を 0 で埋めることを含む）
   evaluation:
-  - 測定再現性（同条件で再測定して許容差内）
-  - 実測／推計／不明の区別
+  - 完成済みの自治体で、正式な制作値を全項目再現できる（T4-01）
+  - 参照した版・SHA が記録され固定と一致、不一致で停止する（T4-02）
+  - 0% と欠損を区別している（T4-03）
+  - 原本ファイルが前後で変わらない（T4-07）
   - 処理時間
-  - API コスト
-  - 参照した測定の版数・SHA が記録され、正式 baseline と一致する
-  - 件数に集計単位（文字列一致／理由文単位／統合後）が明示されている
   open_questions:
-  - 測定対象 AI の範囲と設問数・頻度
-  - 各 AI サービスの利用規約上許される取得方法
-  - 再現性の許容差の定義
-last_updated: '2026-11-04'
+  - Mart（SQLite）を直接読んで EXPLICIT_ZERO／NO_FORMAL_ROW を確定する拡張の時期
+  - 値ファイルの SHA を公開マニフェストに載せる運用（現状は取込時にこちらで記録）
+last_updated: '2026-11-05'
 history:
+- date: '2026-11-05'
+  change: 'STEP 4 試験の結果を反映: 測定・問い合わせを行う役割から、正式データの読み取りと整理に限る役割へ再定義（D-040）。道具 src/aiv/values_reader.py、固定 src/aiv/pins.yaml'
 - date: '2026-11-04'
   change: 測定手法（APA・出現率）の運用原則を禁止事項・評価項目へ追加（文書/入力資料/測定手法_取込メモ.md §3）
 - date: '2026-11-02'

@@ -15,7 +15,7 @@ build_step: STEP2
 pilot: true
 impl_status: definition_drafted
 definition:
-  definition_status: draft（レビュー待ち。未承認）
+  definition_status: 案（STEP 4 試験で検証済み。社長の承認待ち。台帳の impl_status は承認まで変えない）
   purpose: 案件の受付・分解・割当・進捗／例外管理・経営報告を行い、AI 業務を統括する。業務委託人材への契約上の指示権・決裁権は持たない。
   trigger:
   - 社長による案件登録
@@ -35,6 +35,7 @@ definition:
   - 例外の振分け（遅延・根拠不足・品質NG・権限不足・外注未応答）
   - 経営報告（案件・粗利・品質・AIコスト・承認待ち）
   - 組織最適化案（兼務見直し・係新設/統合案）
+  - 業務フロー aiv-free-report の工程管理（整理→診断メモ→差し込み→独立監査→社長の最終確認。社長の承認待ちで止まる）
   tools:
   - 共通DBの読み書き（tasks, projects, approvals の依頼）
   - 実行基盤へのタスク起動
@@ -56,6 +57,7 @@ definition:
   - 承認前の重要操作が要求された
   - 担当役割が未実装・停止中
   - 設定/budgets.yaml の案件別上限（費用・実行時間・再試行回数。未設定のうちは本番稼働させない）
+  - 監査が不合格の成果物を、社長の確認工程に進めない
   forbidden:
   - 人間への契約上の指揮命令
   - 承認なしの外部送信・支出・権限変更
@@ -67,7 +69,10 @@ definition:
   open_questions:
   - 経営報告の頻度と提示先
   - 優先順位付けの具体ルール（期限・収益・重要度の重み）
-last_updated: '2026-11-02'
+  - 監査の『差戻し』を失敗と区別する仕組み（Q-15）
+last_updated: '2026-11-05'
 history:
+- date: '2026-11-05'
+  change: 'STEP 4 試験の結果を反映: 無償診断レポートの業務フロー（src/aiv/free_report_flow.py）を担当工程に追加'
 - date: '2026-11-02'
   change: 初期チーム（STEP 4）向けの定義案を作成

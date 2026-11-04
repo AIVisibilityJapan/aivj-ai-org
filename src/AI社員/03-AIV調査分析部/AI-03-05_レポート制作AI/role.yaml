@@ -15,23 +15,24 @@ build_step: STEP4
 pilot: true
 impl_status: definition_drafted
 definition:
-  definition_status: draft（レビュー待ち。未承認）
-  purpose: AIV 測定と AIO 診断の結果から、契約仕様に沿ったレポートを構成・執筆する。
+  definition_status: 案（STEP 4 試験で検証済み。社長の承認待ち。台帳の impl_status は承認まで変えない）
+  purpose: 整理済みの値と案件パラメータを、FMT v2.22 のひな形に差し込み、無償診断レポート（2 枚）の草稿を別名の PPTX として作る。値は作らない。
   trigger:
   - AIO 診断の完了と引継ぎ
   inputs:
-  - AIV 測定結果
-  - AIO 診断結果
-  - 契約仕様（案件）
+  - AI-03-01 の整理済みの値
+  - 案件パラメータ（発行日・次回配信・測定期間）
+  - FMT v2.22 のひな形（読み取りのみ）
   outputs:
-  - レポート草稿（根拠資料・出典・実測／推計／不明の区別付き）
-  - 品質・リスク監査 AI への監査依頼
+  - レポート草稿（PPTX。ひな形とは別名）と SHA
+  - 品質・リスク監査 AI への監査依頼（成果物のファイルと SHA のみ）
   tools:
+  - src/aiv/report_filler.py（外部通信なし）
   - 共通DB（deliverables）
-  - 文書生成（出力形式は要決定）
   permissions:
+  - 'read: FMT ひな形（読み取りのみ）'
   - 'write: deliverables（レポート草稿）'
-  - '禁止: 顧客への送信（人間承認後に別手順）'
+  - '禁止: ひな形の上書き、顧客への送信（人間承認後に別手順）'
   handoff_from:
   - AIO 診断 AI
   - 地域 AIV 分析 AI
@@ -41,9 +42,9 @@ definition:
   - 重要成果物は事業開発・品質担当が確認
   - 顧客への送付は承認制
   stop_conditions:
-  - 根拠不足の数値・主張が残る
-  - 契約仕様との不一致
-  - 上限超過
+  - 対応表にない差し込み項目、または値が空の項目がある
+  - 案件パラメータが未指定
+  - ひな形を上書きしようとした
   - 設定/budgets.yaml の案件別上限（費用・実行時間・再試行回数。未設定のうちは本番稼働させない）
   forbidden:
   - データ・出典の捏造
@@ -52,17 +53,23 @@ definition:
   - 欠損（NO_FORMAL_ROW・NOT_APPLICABLE・NOT_AVAILABLE）を 0% と表示すること
   - APA 由来の資源が Top3 に表示されたことを「出現率が上がった」と表現すること
   - 正式 selector の出力以外で、独自スコアにより資源を選び直す・出現率と APA を独自に再結合すること
+  - 差し込み項目以外の文面を書き換えること（ひな形の誤りは直さず、監査・社長に報告する）
+  - 無い観光資源を空欄や 0 で埋めること（正式データの表示『―』をそのまま使う）
   evaluation:
   - 独立監査の合格率
   - 手戻り率
   - 納期遵守
   - 値の状態（EXPLICIT_ZERO・NO_FORMAL_ROW・NOT_APPLICABLE・NOT_AVAILABLE）が区別して表示されている
   - category_scope_rate と category_all_scopes_rate を混同していない
+  - 完成済みの自治体で、完成品と本文が全図形一致する（T4-04）
+  - 差し込み項目 {{…}} が残らない
   open_questions:
-  - レポートの標準フォーマット・出力形式
-  - 図表の作成は初期チームでは本役割が簡易対応（データ可視化 AI は後段階）
-last_updated: '2026-11-04'
+  - ひな形（FMT v2.22）の協会名・住所の誤字の修正と、発行済みレポートの扱い（社長判断）
+  - 有償レポート②③④の差し込み様式
+last_updated: '2026-11-05'
 history:
+- date: '2026-11-05'
+  change: 'STEP 4 試験の結果を反映: FMT v2.22 への差し込みに限定。道具 src/aiv/report_filler.py。ひな形自体の不備を未決事項に追加（D-040）'
 - date: '2026-11-04'
   change: 測定手法（APA・出現率）の運用原則を禁止事項・評価項目へ追加（文書/入力資料/測定手法_取込メモ.md §3）
 - date: '2026-11-02'
