@@ -28,6 +28,7 @@ def clean():
               "COND_VALUE_AI": ["ChatGPT / Gemini / Claude"], "DEF_VALUE_AI": ["ChatGPT / Gemini / Claude"],
               "DEF_VALUE_METHOD": ["一般社団法人AI検索可視性標準化協会認定の測定手法に基づく。"],
               "CONTACT_ADDRESS": ["大阪府大阪市北区梅田2-2-2 ヒルトンプラザウエスト19階"],
+              "CONTACT_COMPANY": ["AI Visibility Japan株式会社"], "CONTACT_TEL": ["TEL：06-7777-6718"], "CONTACT_MAIL": ["E-mail：info@aivj.co.jp"],
               "DISCLAIMER": ["（注）数値は参考情報であり、将来の成果を保証しません。"]})
     return s, copy.deepcopy(REC)
 
@@ -48,6 +49,11 @@ DEFECTS = [
     ("Semrush 名の漏れ", _set("DEF_VALUE_METHOD", "Semrush の計測に基づく。"), "外部ツール名"),
     ("協会名から『検索』が抜ける", _set("DEF_VALUE_METHOD", "一般社団法人 AI 可視性標準化協会認定の測定手法。"), "協会名"),
     ("住所の誤字", _set("CONTACT_ADDRESS", "大阪府大阪市北区梅田2-2-2 ヒルトンプラサウ工スト19階"), "住所"),
+    ("社名の空白（全角）", _set("CONTACT_COMPANY", "AI Visibility Japan\u3000株式会社"), "社名"),
+    ("社名の欠落", _set("CONTACT_COMPANY", "別の会社"), "社名"),
+    ("電話番号の誤り", _set("CONTACT_TEL", "TEL：06-0000-0000"), "電話"),
+    ("メールの誤り", _set("CONTACT_MAIL", "E-mail：info@example.com"), "メール"),
+    ("連絡先の欠落", lambda s, r: s.pop("CONTACT_TEL"), "電話"),
     ("AI 名称の誤り", _set("DEF_VALUE_AI", "Chat GPT / Gemini / Claude"), "AI名称"),
     ("AI 名称の区切りの揺れ", _set("DEF_VALUE_AI", "ChatGPT／Gemini／Claude"), "AI名称の区切り"),
     ("値の取り違え（出現率）", _set("SCORE_RATE_1", "2.2%"), "値の一致"),
@@ -90,7 +96,7 @@ def test_audit_never_modifies_inputs():  # T4-06/07: 指摘のみ・成果物と
     assert s == s0 and r == r0
 
 
-def test_unverified_contacts_are_not_judged():
-    s, r = clean(); s["CONTACT_TEL"] = ["TEL：00-0000-0000"]
-    out = ra.audit(s, r, P)
-    assert out["findings"] == [] and out["not_judged"]
+def test_contacts_are_confirmed_and_judged():  # 社長確認済みの正本で判定する
+    assert P["phone"] == "06-7777-6718" and P["email"] == "info@aivj.co.jp" and P["company_name"] == "AI Visibility Japan株式会社"
+    s, r = clean()
+    assert ra.audit(s, r, P)["verdict"] == "合格"

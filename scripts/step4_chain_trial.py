@@ -21,7 +21,8 @@ out_dir = W / "出力" / ("修正ひな形" if corrected else "原本ひな形")
 if corrected:  # 試験用の複製だけを直す（原本のひな形・完成品は変えない）
     fixed = out_dir / "FMT_v2.22_試験用修正.pptx"
     prs = Presentation(str(tpl))
-    fixes = [("一般社団法人 AI 可視性標準化協会", prof["association_name"]), ("ヒルトンプラサウ工スト", prof["address_building"])]
+    fixes = [("一般社団法人 AI 可視性標準化協会", prof["association_name"]), ("ヒルトンプラサウ工スト", prof["address_building"]),
+             ("AI Visibility Japan\u3000株式会社", prof["company_name"])]
     for s in prs.slides:
         for sh in s.shapes:
             if sh.has_text_frame:
