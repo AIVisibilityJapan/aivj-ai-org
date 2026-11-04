@@ -47,7 +47,7 @@
 | 2-6 | AI COO v0（受付・分解・割当・監視・例外・報告）。まずダミー役割 2 つで通す | **完了（2026-11-04）**: src/orchestrator/coo.py（LLM・API なし、費用ゼロ）、ダミー役割と工程は tests/step2-scenarios/。タスクエンジンに依存関係とブロックを追加。試験 T2-01〜09・11・12 相当を自動試験で確認（tests/unit/test_coo.py） |
 | 2-7 | 管理画面（無料の範囲で、案件・会社全体を一覧で把握できるもの。置き場所は事前に比較） | **完了（2026-11-04）**: src/admin-ui/build_dashboard.py（実行状態から 1 枚の HTML を作る表示専用の画面。外部送信なし・script なし、依頼の中身は表示しない、読めないデータと未設定の上限を明示）。試験 tests/unit/test_admin_ui.py。Notion 連携は未接続のため保留（D-032） |
 | 2-8 | ログ・コスト記録 | **完了（2026-11-04）**: src/shared/cost_report.py（日別・役割別・案件別の集計。ドル建てで記録し、円を目安で併記）、scripts/export_costs.py（CSV 出力）、管理画面に費用の集計欄。実行ログはタスクの履歴＋停止ログ＋承認記録（追記専用）。試験 tests/unit/test_cost_report.py。Claude の利用量は対象外（取得できない） |
-| 2-9 | 総合試験（下表）とバックアップ・復元の確認 | **完了（2026-11-04）**: 試験 T2-01〜14 を対応表で確認（tests/unit/test_step2_acceptance.py）、自動試験 102 件合格。scripts/backup_state.py（バックアップ・照合・復元）。結果は 文書/手順書/STEP2_総合試験結果.md、手順は restore.md。T2-13 は RLS の代わりに OS の権限で確認。PC での復元訓練は未実施 |
+| 2-9 | 総合試験（下表）とバックアップ・復元の確認 | **完了（2026-11-04）**: 試験 T2-01〜14 を対応表で確認（tests/unit/test_step2_acceptance.py）、自動試験 102 件合格。scripts/backup_state.py（バックアップ・照合・復元）。結果は 文書/手順書/STEP2_総合試験結果.md、手順は restore.md。T2-13 は RLS の代わりに OS の権限で確認。PC での復元訓練は実施済み（データが少ない状態。溜まった後に再訓練） |
 
 **試験項目**
 | ID | 項目 | 合格基準 |
