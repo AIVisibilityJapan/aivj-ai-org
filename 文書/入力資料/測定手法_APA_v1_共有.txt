@@ -1,0 +1,231 @@
+APA v1測定・保存・診断レポート連携についての共有
+1. APA測定の概要
+APA v1は、自治体を対戦形式で比較し、AIによる評価結果を順位として整理した測定です。
+
+測定対象は全国1,719対象です。総合評価に加え、旅行目的・季節などの15ジャンルを測定しています。
+
+評価対象は以下の16区分です。
+evaluation_id	評価区分
+overall	総合
+solo_travel	一人旅
+couple_travel	カップル旅行
+family_travel	子連れ・家族旅行
+friends_travel	友人旅行
+hot_spring	温泉
+nature	自然景観
+history_culture	歴史・文化
+gourmet	グルメ
+urban_tourism	都市観光
+day_trip	日帰り旅行
+overnight	宿泊旅行
+spring	春
+summer	夏
+autumn	秋
+winter	冬
+
+
+APA順位は、測定時の質問・モデル・実行条件・比較結果に基づくものです。実際の来訪者数、観光消費額、満足度調査などを直接集計した順位ではありません。
+2. 測定の基本構成
+APAでは、評価区分に応じた質問を用い、自治体同士を比較します。
+
+比較結果には、勝者・敗者だけでなく、推奨する理由と推奨しない理由を保持します。
+
+主要な保存項目は以下です。
+- comparison_id：比較を識別するID
+- evaluation_id：評価区分
+- stage：比較段階
+- round：ラウンド情報
+- 比較対象の自治体ID
+- winner_id／loser_id：最終的な勝者・敗者
+- recommended_reason：推奨する理由
+- not_recommended_reason：推奨しない理由
+- 質問・応答schema・runtime情報
+- 元データのsource path・SHA-256
+- CorrectionやQuality判定などの監査記録
+理由文は測定結果そのものの一部です。後から観光資源名を正規化したり、所在地を確認したりしても、APA理由原文を置換・修正する運用は行いません。
+
+質問の正確な全文、モデル、reasoning effort、質問hash、schema hash、runtime hash等は、各評価区分の正式成果物を参照します。区分間で同一条件だったと推測して補完することはしません。
+3. Swiss・BT・Round Robinの位置付け
+各ジャンルでは、Swiss形式の比較、BTによる推定、上位対象のRound Robinなどを組み合わせています。
+
+Swiss30の正式比較数は、該当ジャンルで25,770比較です。Top120 Round Robinは全組合せで7,140比較です。
+
+それぞれの役割は次のとおりです。
+- Swiss：全対象を効率的に比較するための対戦構成
+- BT：勝敗データから相対的な強さを推定する処理
+- Round Robin：対象となった上位自治体間の総当たり比較
+ただし、総合評価と各ジャンルのstage構成を、すべて同一とは扱いません。正式順位の採用元は、各evaluation_idのFormal Source Registryで確定したranking sourceです。
+
+順位を利用する際に、Swissの途中順位、BT snapshot、旧候補版、未採用成果物を正式順位と混在させないことが重要です。
+4. 正式順位とReport Mart
+16区分の正式順位は、自治体IDをキーに取得できるようReport Martへ格納しています。
+
+正式順位の基本件数は次のとおりです。
+- 1区分あたり：1,719件
+- 評価区分：16
+- rankings全体：27,504件
+- rankings_wide：1,719行
+各区分では、順位1～1,719の存在、順位重複、自治体ID重複・欠落、自治体集合の一致などを監査対象としています。
+
+なお、APA測定の1,719対象と、診断レポート側の全国1,741対象は別の対象集合です。両者の件数を同一とみなしたり、単純な名称一致だけで結合したりしません。
+5. 比較・理由データの件数
+過去の正式整合性監査で確認したAPA v1 Report Martの主要件数は以下です。
+データ	件数
+rankings	27,504
+comparisons	494,502
+reasons	494,494
+municipality_comparisons	988,988
+competitor_summary	27,504
+negative_reasons	494,494
+municipality_negative_summary	1,719
+
+
+comparisonsとreasonsの件数は一致していません。比較レコードが存在しても、通常の理由付き確定比較として扱えない記録があるため、全比較に理由が必ず存在するとは仮定しません。
+
+また、自治体別の比較参加数、理由文数、観光資源mention数は異なる集計単位です。
+
+例えば、1比較にはrecommended_reasonとnot_recommended_reasonがあり、その中に複数の資源が出現する場合があります。このため、これらの件数をそのまま相互に比較することはできません。
+6. 「ネガティブ情報」の意味
+APAで扱うネガティブ理由は、主に比較時のnot_recommended_reasonに由来します。
+
+これは、相手自治体との比較において、その自治体を推奨しなかった理由です。
+
+したがって、件数が多いことを、そのまま不祥事・危険情報・事実確認済みの欠点の多さと解釈してはいけません。
+
+内容には、アクセス、季節性、滞在時間、観光資源の幅、比較相手との相対評価などが含まれ得ます。利用時には、評価区分・比較相手・理由原文を合わせて確認します。
+7. 観光資源Martの役割
+APA観光資源Martは、APA理由文に実際に出現した観光資源を構造化し、どの資源が何回・どの文脈で使われたかを取得するための基盤です。
+
+観光資源の一般的な実在一覧や、自治体の観光資源を網羅した台帳とは異なります。
+
+役割は次のように分かれます。
+- Common Asset／辞書：資源のidentity、正式名称、自治体との関係等を管理
+- APA観光資源Mart／mapping：APA測定理由内での実際の言及と資源identityを接続
+- Diagnostic selector：診断レポートへ表示する資源と順序を決定
+- Resource Preflight Gate：生成前に未解決candidateやsource contractを確認
+外部公式情報だけで見つけた資源を、APA測定で出現した資源として追加することはしません。
+8. 観光資源mentionの集計
+観光資源の使用回数は、原則として、同じ資源が1つの理由文中に複数回出ても1件として扱います。
+
+基本となる集計単位は次のとおりです。
+
+comparison_id ＋ reason_type ＋ canonical resource identity
+
+別comparisonで出現した場合は別カウントです。
+
+canonical名とAliasが同じ理由文に併記されていても、同一資源であれば二重計上しません。
+
+主な集計指標には以下があります。
+- mention_count
+- recommended_reason_count
+- not_recommended_reason_count
+- recommended_win_count
+- WIN／LOSS時のmention数
+- evaluation別・自治体別のmention数
+「出現件数」を共有する際は、文字列の単純一致数なのか、理由文単位の重複排除後件数なのか、canonical統合後件数なのかを明示します。
+9. 資源identityとAlias
+理由文の表記を正式資源へ接続する際は、既存辞書・Alias・Evidenceを使用します。
+
+名称が似ているという理由だけで、新しい同一視は行いません。
+
+特に次のようなケースは慎重に扱います。
+- 同名の橋・公園・温泉・祭り
+- 一般名詞に近い料理名や施設名
+- 「○○周辺」「○○一帯」などのエリア表現
+- 温泉地全体と個別宿泊施設
+- 山岳・湖沼・湾岸などの広域資源
+自治体限定Aliasをglobal Aliasへ拡張することは禁止します。
+
+例えば、自治体文脈が必要な「ちゃんぽん」等の表現は、対象自治体に限定して解決します。Aliasを別資源・別slotとして扱いません。
+10. SELF・広域・相手側資源の区別
+理由文に資源名が出現しただけでは、その自治体自身の資源とは判定しません。
+
+主なrelationには次があります。
+- SELF_RESOURCE
+- MULTI_MUNICIPALITY_RESOURCE
+- BROAD_AREAに関係する広域relation
+- REGIONAL_CONTEXT
+- SHARED_CULTURAL_RESOURCE
+- NEARBY_ACCESS
+- ACCESS_NODE
+- VIEWPOINT
+- OPPONENT_RESOURCE
+- NON_SELF／MISATTRIBUTION
+- UNVERIFIED
+推奨・非推奨理由の中には、相手自治体の資源や周辺資源への言及もあり得ます。そのため、対象自治体自身について語られた文脈かを原文で確認します。
+
+広域資源は、対象自治体との正式relationが確認され、現行の表示contractで許容される場合に限って使用します。広域資源を便宜的にSELFへ変更することはしません。
+11. APA代表資源と診断レポートTop3
+APA内の代表資源fieldと、診断レポートの最終Top3は役割が異なります。
+
+APA_RESOURCE_REPRESENTATIVE_TOP_V1は、SELF_RESOURCE＋VERIFIEDを対象とし、以下の順で順位付けする正式参照fieldとして定義されています。
+1. recommended_win_count
+2. recommended_reason_count
+3. mention_count
+一方、診断レポートの最終Top3は、Appearance由来資源とAPA由来資源を、正式selectorのcontractに従って統合したpresentation結果です。
+
+過去に正式化されたPriority Bandは、Appearance rank1～3、APA正式資源、Appearance rank4～5、未充足表示の順です。ただし、実際の生成では過去の説明を再実装せず、現行正式selectorの出力を唯一のpresentation sourceとして使用します。
+
+レポート生成側でAppearance MartとAPA Martを独自に再結合したり、独自スコアで資源を選び直したりしません。
+12. 現行正式baseline
+2026年10月26日に共有された現行正式baselineは以下です。
+構成	正式version
+Common Asset	1.1.25
+Common Alias	1.1.19
+APA mapping	1.1.24
+Diagnostic selector	1.5.45
+Resource Preflight Gate／Source contract	1.1.3
+
+
+共有された全国回帰結果は以下です。
+- 全国selector：1,741／1,741 PASS
+- Top3 binding：5,223／5,223 PASS
+- wrong municipality：0
+- opponent contamination：0
+- duplicate identity：0
+- unexpected diff：0
+このversion情報と結果は、診断レポート基盤からの正式共有に基づきます。本文章の作成時に、実ファイルやcurrent pointerを改めて照合したものではありません。
+
+実運用時はcurrent pointerから正式versionを取得し、version・SHA pinを検証します。自動latest探索は行わず、version／SHA不一致時はfail-closedとします。
+13. 保留candidateとPreflight
+Priority S Initial Evidence Reviewは666／666自治体で完了し、未処理自治体は0と共有されています。
+
+一方、REVIEW_REQUIRED backlogは21,115件です。
+
+この21,115件は、未監査の資源という意味ではありません。初回確認を実施したものの、正式identity・自治体relation・現役性などを一意に確定できず、保留したcandidateです。
+
+正式mappingやselectorへ混入させない方針です。
+
+今後の診断レポート生成では、Resource Preflight Gate 1.1.3を生成前に実行し、未解決candidateがある自治体はfail-closedで停止します。
+
+REPORT_RESOURCE_PREFLIGHT_BLOCKEDとなった場合は、当該自治体の該当candidateだけを優先Evidence Reviewします。安全に確定できたものをappend-onlyの次versionへ反映し、確定できないものは保留を維持します。
+
+保留を解消するために、無理なSELF化や推測Aliasを登録することはしません。
+14. 保存・変更禁止方針
+APA v1の正式測定結果はFrozenとして保護します。
+
+観光資源identityや診断レポート用mappingを改善する場合でも、以下は変更しません。
+- APA順位
+- winner／loser
+- comparison
+- recommended_reason
+- not_recommended_reason
+- BT
+- Swiss
+- Round Robin
+- Raw response
+- Archive原本
+- checkpoint
+保存・回収はcopy-onlyを原則とし、元ファイルの削除・移動・renameは行いません。
+
+旧versionや一時利用データも、将来の再利用可能性があるため、正式成果物ではないという理由だけで削除しません。source path、容量、mtime、SHA-256等を保持し、provenanceを追跡可能にします。
+15. 今後の運用
+今後の運用は、次の役割分離を維持します。
+
+APA測定基盤はFrozenのまま保持し、観光資源のidentity・relation・表示上の改善は、Common Asset／Alias／APA mapping／selectorのversion管理された連携層で行います。
+
+残存REVIEW_REQUIREDを理由に、APA Mart、順位、勝敗、理由、BT、Swiss、RRを再計算しません。再測定や理由再生成も不要です。
+
+診断レポート生成時にPreflightで停止した対象についてのみ、測定根拠を確認したうえでEvidence Reviewを行い、安全に確定した候補を次versionへ反映します。
+
+これにより、測定時点の結果を保存したまま、診断レポートに使用する資源情報の品質を改善していきます。

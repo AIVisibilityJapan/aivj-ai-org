@@ -1,0 +1,419 @@
+AIV Appearance Rate v1
+出現率測定の正式仕様・現行baseline・運用ルール共有
+AIVの「出現率」は、生成AIに観光旅行先を質問した際、各自治体が回答候補の上位にどの程度登場するかを測定した指標です。
+
+単なる観光資源数、検索順位、口コミ件数、APA評価とは異なります。
+
+「AI回答のrank1～3に、その自治体が登場した質問の割合」を基本としています。
+1. 現行の正式baseline
+Appearance側の正式参照先は以下です。
+- Measurement version：v1
+- Formal：v1.0.5_factual_corrected
+- Mart：v2.4
+- Appearance Dictionary：v11
+- Appearance Alias：v11
+- Appearance mapping：1.1.5
+診断レポートの観光資源表示に使用する現行Runtimeは以下です。
+- Common Asset：1.1.10
+- Common Alias：1.1.10
+- APA mapping：1.1.9
+- Diagnostic selector：1.5.29
+Common Asset、APA mapping、selectorの更新は、診断レポートで表示する観光資源のidentity・coverageを改善するものです。
+
+これらが更新されても、Appearance Formal、Mart、appearance_count、valid_response_count、appearance_rate、candidate rankは自動的には変わりません。
+2. 測定対象自治体
+正式な人口・自治体contractは以下です。
+- 自治体マスター：1,747自治体
+- 測定対象：1,741自治体
+- レポート対象：1,741自治体
+- reference-only：6自治体
+- 東京23区：23区を独立した測定対象として扱う
+- 東京23区の一括統合：行わない
+- 旧1,719自治体contract：使用しない
+3. 質問数
+質問総数は14,592件です。
+
+構成は次のとおりです。
+- 全国：1 scope target
+- 地方ブロック：9 scope targets
+- 都道府県：47 scope targets
+- 合計：57 scope targets
+各scope targetには256質問があります。
+
+したがって、
+
+57 scope targets × 256質問 = 14,592質問
+
+です。
+
+全scope targetで次を満たしています。
+- planned questions：256
+- valid responses：256
+- invalid responses：0
+4. カテゴリ
+正式カテゴリは8種類です。
+1. 温泉
+2. グルメ
+3. 自然景観
+4. 歴史・文化
+5. 都市観光
+6. テーマパーク等
+7. 海・マリン
+8. 山岳・スキー
+各カテゴリの質問数は1,824件です。
+
+14,592 ÷ 8カテゴリ = 1,824質問
+
+現在は全8カテゴリについて、
+
+1,824 / 1,824 valid
+
+です。
+
+「カテゴリごとに有効設問数が異なる」という旧説明は使用しません。
+5. 質問条件
+各質問は、主に次の条件を組み合わせて作成しています。
+- category
+- scope
+- scope target
+- traveler type
+- season
+- itinerary
+1カテゴリ・1 scope targetにつき32の条件組み合わせがあり、8カテゴリ合計で256質問になります。
+
+8カテゴリ × 32条件 = 256質問
+
+具体的なtraveler、season、itineraryの名称は正式Question Masterを正本とします。
+6. 質問例
+質問は、おおむね次の形式です。
+春に、自分ひとりで、日帰りで行く、自然景観を楽しめる全国のおすすめの旅行先を、実在する候補から5件、1位～5位で教えてください。十分な候補を確認できない場合は、架空の候補を補わず、確認できる候補だけを回答してください。
+
+質問ごとに異なるのは、主に以下です。
+- 全国・地方ブロック・都道府県
+- カテゴリ
+- 旅行者タイプ
+- 季節
+- 日帰り・宿泊等の旅程条件
+7. 回答rankの扱い
+AI回答は原則としてrank1～5の候補を持ちます。
+
+正式なAppearance集計では次のように扱います。
+- rank1～3：FORMAL
+- rank4～5：REFERENCE_ONLY
+rank4～5は、観光資源候補や診断レポートの補完候補として参照できますが、自治体の正式appearance_countには加算しません。
+
+rank4～5をrank1～3へ昇格させることも禁止です。
+8. Effective Response
+正式集計では、1 questionにつきEffective Responseを必ず1件に限定しています。
+
+最終構成は以下です。
+- ORIGINAL valid：14,559件
+- LOCAL_RECOVERY：31件
+- RETRY_REPLACEMENT：2件
+- 合計：14,592件
+最終状態は以下です。
+- total questions：14,592
+- effective responses：14,592
+- valid：14,592
+- invalid：0
+- duplicate effective question：0
+Local RecoveryとRetry Replacementは、承認済みの回答だけを使用しています。
+
+元Rawは変更・削除・上書きしていません。
+9. 出現判定
+自治体出現の基本grainは次のとおりです。
+
+question_id × municipality_id
+
+同じ質問の中に、同じ自治体に属する候補が複数出ても、appearanceは1件です。
+
+例：
+- rank1：白浜温泉
+- rank2：白良浜
+- rank3：アドベンチャーワールド
+これらがすべて白浜町に帰属する場合でも、その質問における白浜町のappearance_countは1件です。
+
+観光資源数を3件として自治体出現数へ加算するものではありません。
+10. 出現率の計算
+基本式は以下です。
+
+appearance_rate = appearance_count ÷ valid_response_count
+全体出現率
+全14,592質問を対象にします。
+
+自治体がrank1～3に出現したユニーク質問数 ÷ 14,592
+全国出現率
+全国scope targetの256質問を対象にします。
+
+全国質問でのappearance_count ÷ 256
+地方ブロック出現率
+自治体が属する地方ブロックの256質問を対象にします。
+
+該当地方ブロックでのappearance_count ÷ 256
+都道府県出現率
+自治体が属する都道府県の256質問を対象にします。
+
+該当都道府県でのappearance_count ÷ 256
+category_all_scopes_rate
+1カテゴリの全国・地方ブロック・都道府県を合算した1,824質問を対象にします。
+
+カテゴリ内appearance_count ÷ 1,824
+category_scope_rate
+特定カテゴリ・特定scope targetの32質問を対象にします。
+
+カテゴリ・scope target内appearance_count ÷ 32
+
+category_all_scopes_rateとcategory_scope_rateは別の指標です。レポートやグラフで混同してはいけません。
+11. 0%と欠損の区別
+次の状態を区別します。
+- EXPLICIT_ZERO：正式な分母があり、appearance_countが0
+- NO_FORMAL_ROW：正式集計行が存在しない
+- NOT_APPLICABLE：その自治体には適用しない
+- NOT_AVAILABLE：必要な値を取得できない
+NO_FORMAL_ROW、NOT_APPLICABLE、NOT_AVAILABLEを0%へ変換してはいけません。
+
+0%は、正式な分母と有効回答が存在する場合にだけ使用します。
+12. Municipality Resolution
+AI回答に出た候補名は、自治体へ事実ベースで帰属させます。
+
+主なstatusは以下です。
+- SELF_RESOURCE
+- CROSS_MUNICIPALITY
+- CROSS_MUNICIPALITY_ASSET
+- MULTI_MUNICIPALITY
+- BROAD_AREA
+- AMBIGUOUS
+- MUNICIPALITY_SELF
+- NON_ASSET
+- INVALID_CANDIDATE
+- DICTIONARY_GAP
+- HUMAN_REVIEW
+- PRIORITY_B
+単純な文字列一致だけで自治体へ加算しません。
+
+例えば、複数自治体にまたがる山、半島、湖、広域温泉地、観光エリアなどは、単一自治体のappearanceへ自動加算しません。
+13. Factual Correction
+Formal v1.0.5_factual_correctedでは、candidateの事実上の所在地・自治体帰属を再監査した結果が反映されています。
+
+この補正は、既存回答の候補やrankを作り変えたものではありません。
+
+変更対象は主に以下です。
+- 誤った自治体帰属の修正
+- 広域資源の単一自治体加算防止
+- 同名資源の誤解決防止
+- no_matchの再確認
+- CROSS、MULTI、AMBIGUOUS等の維持
+回答本文、candidate rank、question数、valid_response_countは変更していません。
+14. 観光資源と自治体出現率の関係
+自治体出現率と観光資源表示は別の集計です。
+
+自治体がappearanceに出現していても、表示可能なACTIVE観光資源がない場合があります。
+
+主な理由は以下です。
+- 自治体名そのものが候補だった
+- 広域地名だった
+- 山・湖・半島等が複数自治体にまたがる
+- NON_ASSETだった
+- Dictionary未登録だった
+- Human Review中だった
+- Priority Bだった
+- Aliasが一意に解決できなかった
+- municipality-self contamination防止で除外された
+- rank4～5にしか存在しなかった
+逆に、Dictionaryに資源が登録されていても、Appearance回答に実際に出現していなければ、その自治体のAppearance観光資源にはなりません。
+
+重要な原則は次のとおりです。
+
+Dictionary登録済み ≠ Appearance測定内で出現済み
+15. 観光資源occurrence
+Appearance観光資源の基本grainは次のとおりです。
+
+question_id × canonical_asset_id
+
+同じ質問内で同じcanonical assetが重複しても、occurrenceは1件です。
+
+正式asset shareは以下です。
+
+asset unique question count ÷ municipality appearance unique question count
+
+asset rankingの正式scopeはall_scopesです。
+
+scope別のasset rankingは正式指標として生成しません。
+16. 観光資源Top3の表示優先順位
+診断レポートの観光資源Top3は、Appearanceだけで構成されるとは限りません。
+
+現行selector 1.5.29の正式優先順位は以下です。
+1. Appearance rank1～3
+2. APA
+3. Appearance rank4～5
+4. ―
+つまり、APA由来の観光資源がTop3へ表示されても、Appearance出現率が変わったことにはなりません。
+
+selector更新によって変更される可能性があるのは観光資源の表示slotです。
+
+次は変更されません。
+- appearance_count
+- valid_response_count
+- appearance_rate
+- candidate rank
+- Formal
+- Mart
+17. Common Assetの役割
+Common Asset Masterは、AppearanceとAPAで共通利用する観光資源identityの正本です。
+
+現行versionは以下です。
+- Common Asset：1.1.10
+- Common Alias：1.1.10
+Appearance側とAPA側は、それぞれCommon Asset IDへのmappingを持ちます。
+
+Common Assetへ登録されているだけでは、Appearance測定由来とは判定しません。
+
+Appearance由来とするには、最低限次のlineageが必要です。
+
+question_id → candidate_row_id → candidate rank → Appearance mapping → Common Asset ID
+
+このlineageがない資源を、外部情報だけでAppearance Top3へ追加してはいけません。
+18. APAとの分離
+namespaceは分離します。
+- Appearance：appearance.*
+- APA：apa.*
+Appearance SQLiteとAPA SQLiteを直接JOINして正本化しません。
+
+統合は診断レポート生成層またはselector層で行います。
+
+APAの資源coverage改善は、Appearance測定値の修正ではありません。
+19. 現行の観光資源関連version
+診断レポートの現行正式参照は以下です。
+- Common Asset：1.1.10
+- Common Alias：1.1.10
+- Appearance mapping：1.1.5
+- APA mapping：1.1.9
+- Diagnostic selector：1.5.29
+Appearance FormalとMartは引き続き以下です。
+- Formal：v1.0.5_factual_corrected
+- Mart：v2.4
+今回のAPA coverage remediationによるAppearance側変更は0件です。
+- Appearance Formal変更：0
+- Appearance Mart変更：0
+- Appearance Rate再計算：0
+- Appearance candidate rank変更：0
+- Appearance mapping変更：0
+- Appearance測定値変更：0
+20. レポートで取得する主要フィールド
+最低限、次のAppearanceフィールドを使用します。
+Scope
+- appearance.national.appearance_count
+- appearance.national.valid_response_count
+- appearance.national.rate
+- appearance.region_block.appearance_count
+- appearance.region_block.valid_response_count
+- appearance.region_block.rate
+- appearance.prefecture.appearance_count
+- appearance.prefecture.valid_response_count
+- appearance.prefecture.rate
+Category
+- category name
+- appearance_count
+- valid_response_count
+- category_scope_rate
+- category_all_scopes_rate
+- value status
+Asset
+- asset rank
+- Common Asset ID
+- canonical asset name
+- unique question count
+- share
+- source tier
+- source lineage
+21. 監査時の確認順序
+自治体の出現率を確認する場合は、次の順序で調査します。
+1. municipality_idを確定
+2. Formalのappearance_countを確認
+3. valid_response_countを確認
+4. appearance_rateを再計算して一致確認
+5. Martのscope値を確認
+6. 8カテゴリを確認
+7. category_scope_rateとcategory_all_scopes_rateを区別
+8. contributing questionを展開
+9. candidate rank1～5を確認
+10. municipality resolutionを確認
+11. asset occurrenceを確認
+12. Appearance mappingを確認
+13. Common Asset IDを確認
+14. selector source tierを確認
+15. APA混入や旧Mart fallbackがないことを確認
+22. 変更禁止の基本ルール
+READ-ONLY監査では、次を変更しません。
+- Raw Response
+- Parsed Response
+- Candidate
+- Effective Response
+- Formal
+- Mart
+- Dictionary
+- Alias
+- Common Asset
+- mapping
+- selector
+- runtime pointer
+- candidate rank
+- appearance_count
+- valid_response_count
+- appearance_rate
+変更が必要な場合は、監査工程と正式Build工程を分離します。
+
+既存versionを直接上書きせず、新versionとして作成します。
+23. 再計算が必要になる条件
+Appearance Rateの再計算が必要になるのは、主に次の場合です。
+- Effective Responseが変わる
+- valid／invalid判定が変わる
+- rank1～3 candidateが変わる
+- municipality attributionが変わる
+- question×municipality dedup結果が変わる
+- Formal denominator contractが変わる
+一方、次の変更だけではAppearance Rateを再計算しません。
+- Common Assetの名称修正
+- Alias追加
+- APA mapping追加
+- selector metadata修正
+- APA資源のTop3補完
+- 表示名変更
+- asset identity統合
+- rank4～5資源の表示追加
+24. 正式な解釈
+Appearance Rateは、自治体の観光価値そのものを直接評価する指標ではありません。
+
+測定時点の質問条件、AIモデル、回答形式、候補rank、自治体帰属ルールに基づき、
+
+「生成AIが旅行先候補として、その自治体をどの程度上位に挙げたか」
+
+を表す指標です。
+
+出現率が0%でも、実在する観光資源がないことを意味しません。
+
+観光資源がDictionaryに存在しても、測定回答に登場していなければAppearance出現にはなりません。
+
+診断レポートのTop3にAPA資源が表示されても、Appearance Rateが増えたことを意味しません。
+
+この3点は必ず区別してください。
+25. 現在の正式な要約
+- 質問総数：14,592
+- Effective Response：14,592
+- valid：14,592
+- invalid：0
+- カテゴリ：8
+- 各カテゴリ：1,824質問
+- scope target：57
+- 各scope target：256質問
+- 測定対象自治体：1,741
+- rank1～3：Formal appearance
+- rank4～5：Reference only
+- Formal：v1.0.5_factual_corrected
+- Mart：v2.4
+- Appearance mapping：1.1.5
+- Common Asset／Alias：1.1.10
+- APA mapping：1.1.9
+- selector：1.5.29
+- Appearance Rateの現行再計算：不要
+- Appearance Formal／Martの再生成：不要
