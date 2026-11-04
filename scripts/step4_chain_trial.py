@@ -2,6 +2,7 @@
 使い方:
   py scripts\\step4_chain_trial.py 糸島市                 … 原本のひな形で実行（協会名・住所の不備で監査が差し戻す想定）
   py scripts\\step4_chain_trial.py 糸島市 --corrected     … ひな形の複製（試験用）で不備を直して実行。原本は変えない
+  py scripts\\step4_chain_trial.py 糸島市 --v223          … 修正済みのひな形 FMT v2.23 で実行（監査に合格し、社長の確認待ちで止まる想定）
 状態・出力は データ\\private\\06-STEP4作業\\ の中だけ（外部送信・費用なし）。"""
 import json, shutil, sys, tempfile
 from pathlib import Path
@@ -14,9 +15,10 @@ from pptx import Presentation  # noqa: E402
 W = R / "データ" / "private" / "06-STEP4作業"
 name = next((a for a in sys.argv[1:] if not a.startswith("--")), "糸島市")
 corrected = "--corrected" in sys.argv
+v223 = "--v223" in sys.argv
 prof = ra.load_profile()
-tpl = W / "FMT" / "無償レポート_FMTv2.22.pptx"
-out_dir = W / "出力" / ("修正ひな形" if corrected else "原本ひな形"); out_dir.mkdir(parents=True, exist_ok=True)
+tpl = W / "FMT" / ("無償レポート_FMTv2.23.pptx" if v223 else "無償レポート_FMTv2.22.pptx")
+out_dir = W / "出力" / ("v2.23" if v223 else ("修正ひな形" if corrected else "原本ひな形")); out_dir.mkdir(parents=True, exist_ok=True)
 
 if corrected:  # 試験用の複製だけを直す（原本のひな形・完成品は変えない）
     fixed = out_dir / "FMT_v2.22_試験用修正.pptx"
