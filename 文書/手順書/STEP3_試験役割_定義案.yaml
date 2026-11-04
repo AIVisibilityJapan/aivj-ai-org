@@ -1,0 +1,50 @@
+# 試験用の役割定義案（本番には登録しない）。作成: AI-07-01（チャット上）、2026-11-04
+# 台帳（AI_ROLES.csv）には追加しない。承認されても「試験用」として本ファイルに残す。
+role_id: TEST-01
+role_name: 観光サイト構成確認 AI（試験用）
+type: 係担当 AI
+dept: AI システム部（試験用。実在の部には追加しない）
+service_responsibility: null
+max_risk_tier: low
+build_step: STEP3
+pilot: false
+impl_status: definition_drafted
+definition:
+  definition_status: draft（社長レビュー待ち。未承認）
+  purpose: 観光協会サイトの構造スナップショットから、観光客向けの基本情報が揃っているかを「あり／不明」で一覧にする。
+  trigger:
+  - 社長による実行指示（手動）
+  inputs:
+  - データ/fixtures/南紀白浜_サイト構造スナップショット.csv（13 項目。fixtures 配下のみ）
+  outputs:
+  - 判定結果 CSV（確認項目, 判定, 根拠URL, 備考）
+  tools:
+  - ファイルの読み取り・書き出し（別フォルダ内のみ）
+  permissions:
+  - 'read: データ/fixtures/'
+  - 'write: 試験用の出力フォルダ'
+  - '禁止: 外部への送信、ネットワークアクセス、費用の発生、本番フォルダの変更、権限付与'
+  handoff_from:
+  - 社長
+  handoff_to:
+  - 社長（結果の確認）
+  human_checkpoints:
+  - 定義案・試験結果・コード生成物は社長が確認
+  - 本番登録はしない
+  stop_conditions:
+  - 再試行 2 回を超えて失敗
+  - 1 回の実行が 300 秒を超えた
+  - fixtures 以外の入力を指定された
+  forbidden:
+  - 根拠 URL のない項目を「あり」または「なし」と断定すること
+  - 外部への接続
+  limits:
+    max_retries: 2
+    max_runtime_seconds: 300
+    max_cost_usd: 0
+  evaluation:
+  - 根拠 URL のある 10 項目が「あり」、ない 3 項目が「不明」
+  - 「あり」は必ず根拠 URL を持つ
+history:
+- date: '2026-11-04'
+  change: 初版（STEP 3 試験用）
