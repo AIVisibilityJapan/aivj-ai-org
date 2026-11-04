@@ -161,7 +161,7 @@ def validate(root: Path | str) -> tuple[list[Role], list[str], list[str]]:
         if isinstance(x, dict):
             for k, v in x.items(): yield from leaves(v, f"{path}.{k}" if path else k)
         else: yield path, x
-    unset = [k for k, v in leaves(b) if v is None]
+    unset = [k for k, v in leaves(b) if v is None and k != "monthly_limits.claude_platform_usd"]   # 月の Claude 利用上限は記録用（Pro は定額・取得不可、D-035）
     info.append(f"上限の未設定項目: {len(unset)}（未設定は起動しない。費用が発生する処理は都度社長確認）")
     return roles, errors, info
 

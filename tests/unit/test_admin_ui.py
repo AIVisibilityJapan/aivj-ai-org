@@ -33,7 +33,14 @@ class AdminUi(unittest.TestCase):
     def test_empty_state_renders(self):
         p = self.page()
         self.assertIn("AIVJ 管理画面", p)
+        self.assertNotIn("上限が未設定の項目が", p)                            # D-035 で上限を設定済み
+
+    def test_unset_limits_are_flagged(self):
+        b = self.d / "b.yaml"
+        b.write_text("per_run_limits:\n  max_cost_usd: null\n  max_runtime_seconds: 600\n  max_retries: 2\n", encoding="utf-8")
+        p = bd.render(bd.collect(self.d, b))
         self.assertIn("未設定（起動しない）", p)
+        self.assertIn("上限が未設定の項目が", p)
 
     def test_no_script_no_external_no_links(self):
         p = self.page()
