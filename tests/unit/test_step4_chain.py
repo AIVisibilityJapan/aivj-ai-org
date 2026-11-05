@@ -154,3 +154,17 @@ def test_template_sha_pin_mismatch_is_rejected(env):  # 採用したひな形の
     c2 = coo_mod.COO(tmp / "state5", dict(LIM), dict(ff.TRIAL_ROLES), ff.make_handlers(cfg), ff.WORKFLOWS, {"03"}, dict(AP), clock=Clock())
     c2.register_project(PROJ); c2.tick()
     assert c2.engine.get(c2.get_project("P-FR-1")["steps"]["write"]["task_id"])["status"] == "succeeded"
+
+
+def test_audit_hold_when_items_not_judged_stops_for_human(env):  # 判断できなかった項目だけが残る → 保留で止める（D-049）
+    c, cfg, tmp, vals, tpl = env
+    cfg["audit_fn"] = lambda s, r, *a: {"verdict": "保留", "findings": [], "not_judged": ["ランク定義表の％の母数"]}
+    c = coo_mod.COO(tmp / "state3", dict(LIM), dict(ff.TRIAL_ROLES), ff.make_handlers(cfg), ff.WORKFLOWS, {"03"}, dict(AP), clock=Clock())
+    c.register_project(PROJ)
+    for _ in range(4):
+        c.tick()
+    steps = c.get_project("P-FR-1")["steps"]
+    a = c.engine.get(steps["audit"]["task_id"])
+    assert a["status"] == "rejected" and "保留" in " ".join(h["detail"] for h in a["history"])
+    assert c.engine.get(steps["president_review"]["task_id"])["status"] != "succeeded"
+    assert c.engine.stopped() == set()

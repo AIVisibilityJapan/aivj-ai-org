@@ -122,6 +122,8 @@ def make_handlers(cfg: dict) -> dict:
         if res["verdict"] == "不合格":
             top = "; ".join(f"[{x['severity']}]{x['check']}: {x['message']}" for x in res["findings"] if x["severity"] in ra.SEV_FAIL)
             raise AuditRejected(f"監査 不合格（差戻し）: {top}")
+        if res["verdict"] == "保留":
+            raise AuditRejected("監査 保留（差戻し）: 判断できなかった項目があるため止める。人が決める: " + "; ".join(str(x) for x in res["not_judged"]))
         return {"verdict": res["verdict"], "findings": res["findings"], "not_judged": res["not_judged"],
                 "pptx": w["pptx"], "pptx_sha256": w["pptx_sha256"]}, 0.0
 

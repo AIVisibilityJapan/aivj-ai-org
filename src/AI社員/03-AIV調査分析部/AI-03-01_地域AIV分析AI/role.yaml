@@ -26,6 +26,7 @@ definition:
   outputs:
   - '整理済みの値（正式データの文字をそのまま。0%・欠損の状態付き: FORMAL_VALUE／UNVERIFIED_ZERO／NOT_AVAILABLE）'
   - 参照元の記録（ファイル・SHA・レコードの版）
+  - 根拠データの activation_state が正式ポインタ承認待ちのときは、その旨を注記して引き継ぐ（止めない）
   - AIO 診断 AI・レポート制作 AI への引継ぎ
   tools:
   - src/aiv/values_reader.py（読み取り専用・外部通信なし）
@@ -68,6 +69,8 @@ definition:
   - 値ファイルの SHA を公開マニフェストに載せる運用（現状は取込時にこちらで記録）
 last_updated: '2026-11-05'
 history:
+- date: '2026-11-05'
+  change: '社長の判断（D-049）を反映: 根拠データが正式ポインタ承認待ちのときは、注記して引き継ぐ（止めない）'
 - date: '2026-11-05'
   change: 'STEP 4 試験の結果を反映: 測定・問い合わせを行う役割から、正式データの読み取りと整理に限る役割へ再定義（D-040）。道具 src/aiv/values_reader.py、固定 src/aiv/pins.yaml'
 - date: '2026-11-04'

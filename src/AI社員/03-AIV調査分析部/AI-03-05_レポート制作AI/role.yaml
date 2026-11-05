@@ -16,7 +16,7 @@ pilot: true
 impl_status: definition_drafted
 definition:
   definition_status: 案（STEP 4 試験で検証済み。社長の承認待ち。台帳の impl_status は承認まで変えない）
-  purpose: 整理済みの値と案件パラメータを、FMT v2.22 のひな形に差し込み、無償診断レポート（2 枚）の草稿を別名の PPTX として作る。値は作らない。
+  purpose: 整理済みの値と案件パラメータを、採用したひな形（FMT v2.24）に差し込み、無償診断レポート（2 枚）の草稿を別名の PPTX として作る。値は作らない。
   trigger:
   - AIO 診断の完了と引継ぎ
   inputs:
@@ -26,6 +26,7 @@ definition:
   outputs:
   - レポート草稿（PPTX。ひな形とは別名）と SHA
   - 品質・リスク監査 AI への監査依頼（成果物のファイルと SHA のみ）
+  - 根拠データが承認待ち（activation_state）のときは、社長確認用の注記を付けて引き継ぐ（止めない）
   tools:
   - src/aiv/report_filler.py（外部通信なし）
   - 共通DB（deliverables）
@@ -47,6 +48,7 @@ definition:
   - ひな形を上書きしようとした
   - 設定/budgets.yaml の案件別上限（費用・実行時間・再試行回数。未設定のうちは本番稼働させない）
   - 採用したひな形の SHA が固定と違う（差戻し）
+  - 値ファイルの SHA が pins.yaml の固定と違う、または整理済みの値の参照元の記録がない（差戻し。差し込みの前に原本から読み直して照合する）
   forbidden:
   - データ・出典の捏造
   - 成果保証の表現
@@ -68,6 +70,8 @@ definition:
   - 有償レポート②③④の差し込み様式
 last_updated: '2026-11-05'
 history:
+- date: '2026-11-05'
+  change: '社長の判断（D-049）を反映: 値ファイルの SHA 照合を停止条件に追加（実装は既にあり、定義に明記）。根拠データが承認待ちのときは注記を付けて引き継ぐ。目的欄の版の記載を v2.22 から v2.24 に整理'
 - date: '2026-11-05'
   change: ひな形 FMT v2.24 を採用（D-046）。ひな形の SHA を固定・照合。ひな形の誤りの未決事項を解消
 - date: '2026-11-05'

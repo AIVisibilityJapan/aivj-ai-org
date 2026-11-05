@@ -100,3 +100,19 @@ def test_contacts_are_confirmed_and_judged():  # 社長確認済みの正本で�
     assert P["phone"] == "06-7777-6718" and P["email"] == "info@aivj.co.jp" and P["company_name"] == "AI Visibility Japan株式会社"
     s, r = clean()
     assert ra.audit(s, r, P)["verdict"] == "合格"
+
+
+def test_not_judged_items_make_verdict_hold_unless_failed():  # D-049: 判断できなかった項目だけが残る → 保留
+    s, r = clean()
+    out = ra.audit(s, r, P, not_judged=["ランク定義表の％の母数"])
+    assert out["verdict"] == "保留" and out["not_judged"] == ["ランク定義表の％の母数"] and out["findings"] == []
+    s2, r2 = clean(); s2["SCORE_RATE_1"] = ["9.9%"]
+    assert ra.audit(s2, r2, P, not_judged=["x"])["verdict"] == "不合格"      # 不合格は保留に変わらない
+    s3, r3 = clean(); s3["DEF_VALUE_AI"] = ["ChatGPT／Gemini／Claude"]
+    assert ra.audit(s3, r3, P, not_judged=["x"])["verdict"] == "保留"        # 軽＋未判定も保留
+
+
+def test_company_name_error_is_serious():  # D-049: 社名・協会名の誤りは『重大』
+    s, r = clean(); s["CONTACT_COMPANY"] = ["AI Visibility Japan 株式会社"]
+    out = ra.audit(s, r, P)
+    assert out["verdict"] == "不合格" and any(x["check"] == "社名" and x["severity"] == "重大" for x in out["findings"])

@@ -62,7 +62,8 @@ def _all_text(shapes: dict) -> str:
     return "\n".join(t for ts in shapes.values() for t in ts)
 
 
-def audit(shapes: dict, rec: dict, profile: dict | None = None) -> dict:
+def audit(shapes: dict, rec: dict, profile: dict | None = None, not_judged: list | None = None) -> dict:
+    """not_judged: 呼び出し側が判断できなかった項目（正本が未確定など）。1 件でもあり、不合格でなければ判定は『保留』"""
     p = profile or load_profile()
     f: list = []
     text = _all_text(shapes)
@@ -135,14 +136,17 @@ def audit(shapes: dict, rec: dict, profile: dict | None = None) -> dict:
     # 10 社名・連絡先（正本は社長確認済み）
     for w in p.get("company_wrong_forms", []):
         if w in text:
-            _add(f, "社名", "中", f"社名の表記が正本と違う: 『{w}』（正: {p['company_name']}）")
+            _add(f, "社名", "重大", f"社名の表記が正本と違う: 『{w}』（正: {p['company_name']}）")
     contact = " ".join(shapes.get("CONTACT_COMPANY", []) + shapes.get("CONTACT_TEL", []) + shapes.get("CONTACT_MAIL", []))
     if p.get("company_name") and p["company_name"] not in contact:
         if not any(w in text for w in p.get("company_wrong_forms", [])):
-            _add(f, "社名", "中", "お問い合わせ先に社名がない、または正本と一致しない")
+            _add(f, "社名", "重大", "お問い合わせ先に社名がない、または正本と一致しない")
     if p.get("phone") and p["phone"] not in " ".join(shapes.get("CONTACT_TEL", [])):
         _add(f, "電話", "中", f"電話番号が正本と一致しない・ない（正: {p['phone']}）")
     if p.get("email") and p["email"] not in " ".join(shapes.get("CONTACT_MAIL", [])):
         _add(f, "メール", "中", f"メールアドレスが正本と一致しない・ない（正: {p['email']}）")
     verdict = "不合格" if any(x["severity"] in SEV_FAIL for x in f) else ("合格（指摘あり）" if f else "合格")
-    return {"verdict": verdict, "findings": f, "not_judged": []}
+    nj = list(not_judged or [])
+    if nj and verdict != "不合格":
+        verdict = "保留"  # 判断できなかった項目が残る間は合格にせず、人が決める
+    return {"verdict": verdict, "findings": f, "not_judged": nj}
