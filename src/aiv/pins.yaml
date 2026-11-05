@@ -7,6 +7,13 @@ report_values:
 manifest:
   file: formal_release_manifest.json
   sha256: null                # 未記録（初回の読み取りで記録し、承認後に固定する）
+# 採用したひな形（FMT）。SHA が違えば差し込みを止める（差戻し）。採用の記録: 判断ログ D-046
+template:
+  version: "2.24"
+  file: 無償レポート_FMTv2.24.pptx
+  sha256: deea3c3202091d348d7503fdd6c5346ac437ee7c7b7d43429f5761f2895336c6
+  adopted: 2026-11-05
+  derived_from: v2.22（原本・変更しない）→ v2.23（協会名・ビル名・社名）→ v2.24（対象 AI の区切りを『 / 』に統一）
 population:
   appearance: 1741            # 出現率の集計単位（自治体数）
   apa_rank: 1719              # 自治体ランキングの集計単位

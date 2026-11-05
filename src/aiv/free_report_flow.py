@@ -84,7 +84,8 @@ def _sha(path) -> str:
 
 
 def make_handlers(cfg: dict) -> dict:
-    """cfg: values_path, template_path, out_dir, params{issue_date,next_issue_date}, overrides, pins(任意), profile(任意), audit_fn(任意)"""
+    """cfg: values_path, template_path, out_dir, params{issue_date,next_issue_date}, overrides, pins(任意), profile(任意), audit_fn(任意),
+    template_sha256(任意。指定すると、ひな形の SHA が違えば差戻し)"""
     pins = cfg.get("pins")
     audit_fn = cfg.get("audit_fn") or ra.audit
 
@@ -102,6 +103,8 @@ def make_handlers(cfg: dict) -> dict:
 
     def write(payload, up):
         # 診断メモは参照のみ（差し込みは整理済みの値から。メモの文は成果物に入れない）
+        if cfg.get("template_sha256") and _sha(cfg["template_path"]) != cfg["template_sha256"]:
+            raise rf.FillStop("ひな形の SHA が固定（pins.yaml の template）と違う。採用した版か確認する")
         records, src = vr.load_values(cfg["values_path"], pins)
         org = vr.organize(vr.get_municipality(records, payload.get("municipality"), payload.get("municipality_id")), src, pins)
         out = Path(cfg["out_dir"]) / f"{payload['municipality']}_無償診断レポート.pptx"

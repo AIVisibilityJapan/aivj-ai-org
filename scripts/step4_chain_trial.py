@@ -1,8 +1,8 @@
 """STEP 4 連携試験（実データ）: 案件登録だけで 整理→診断→差し込み→独立監査 を進め、社長の確認待ちで止める。
 使い方:
-  py scripts\\step4_chain_trial.py 糸島市                 … 原本のひな形で実行（協会名・住所の不備で監査が差し戻す想定）
-  py scripts\\step4_chain_trial.py 糸島市 --corrected     … ひな形の複製（試験用）で不備を直して実行。原本は変えない
-  py scripts\\step4_chain_trial.py 糸島市 --v223          … 修正済みのひな形 FMT v2.23 で実行（監査に合格し、社長の確認待ちで止まる想定）
+  py scripts\\step4_chain_trial.py 糸島市                 … 採用したひな形（pins.yaml の template。v2.24）で実行。監査に合格し、社長の確認待ちで止まる想定
+  py scripts\\step4_chain_trial.py 糸島市 --v222          … 旧原本 v2.22 で実行（協会名・住所・社名の不備で監査が差し戻す想定）
+  py scripts\\step4_chain_trial.py 糸島市 --v223          … 中間版 v2.23 で実行（対象 AI の区切りの揺れ（軽）だけが残る）
 状態・出力は データ\\private\\06-STEP4作業\\ の中だけ（外部送信・費用なし）。"""
 import json, shutil, sys, tempfile
 from pathlib import Path
@@ -14,34 +14,19 @@ from pptx import Presentation  # noqa: E402
 
 W = R / "データ" / "private" / "06-STEP4作業"
 name = next((a for a in sys.argv[1:] if not a.startswith("--")), "糸島市")
-corrected = "--corrected" in sys.argv
+v222 = "--v222" in sys.argv
 v223 = "--v223" in sys.argv
+pins = vr.load_pins()
 prof = ra.load_profile()
-tpl = W / "FMT" / ("無償レポート_FMTv2.23.pptx" if v223 else "無償レポート_FMTv2.22.pptx")
-out_dir = W / "出力" / ("v2.23" if v223 else ("修正ひな形" if corrected else "原本ひな形")); out_dir.mkdir(parents=True, exist_ok=True)
-
-if corrected:  # 試験用の複製だけを直す（原本のひな形・完成品は変えない）
-    fixed = out_dir / "FMT_v2.22_試験用修正.pptx"
-    prs = Presentation(str(tpl))
-    fixes = [("一般社団法人 AI 可視性標準化協会", prof["association_name"]), ("ヒルトンプラサウ工スト", prof["address_building"]),
-             ("AI Visibility Japan\u3000株式会社", prof["company_name"])]
-    for s in prs.slides:
-        for sh in s.shapes:
-            if sh.has_text_frame:
-                for p in sh.text_frame.paragraphs:
-                    t = "".join(r.text for r in p.runs)
-                    n = t
-                    for a, b in fixes:
-                        n = n.replace(a, b)
-                    if n != t and p.runs:
-                        p.runs[0].text = n
-                        for r in p.runs[1:]:
-                            r._r.getparent().remove(r._r)
-    prs.save(str(fixed)); tpl = fixed
+ver = "2.22" if v222 else ("2.23" if v223 else pins["template"]["version"])
+tpl = W / "FMT" / f"無償レポート_FMTv{ver}.pptx"
+out_dir = W / "出力" / f"v{ver}"; out_dir.mkdir(parents=True, exist_ok=True)
 
 cfg = {"values_path": W / "入力" / "report_values_s1550_38.json", "template_path": tpl, "out_dir": out_dir,
        "params": {"issue_date": "2026年10月28日", "next_issue_date": "2027年1月"},
        "overrides": {"COND_VALUE_DATE": "2026年9月1日～9月30日"}}
+if ver == pins["template"]["version"]:
+    cfg["template_sha256"] = pins["template"]["sha256"]   # 採用した版は SHA を固定して照合する
 LIM = {"max_retries": 2, "max_runtime_seconds": 600, "consecutive_failures_to_stop_role": 3, "max_cost_usd": 0}
 AP = {"ttl_hours": 24, "max_pending_high_risk": 5}
 state = Path(tempfile.mkdtemp(dir=str(W / "出力")))

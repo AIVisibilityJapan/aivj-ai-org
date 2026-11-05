@@ -138,3 +138,19 @@ def test_real_audit_is_the_default():
     import report_audit as ra
     cfg = {"values_path": "x", "template_path": "y", "out_dir": "z", "params": {}}
     assert ff.make_handlers(cfg)["AI-06-06"] is not None and ra.audit  # 既定は本物の検査器（audit_fn 未指定）
+
+
+def test_template_sha_pin_mismatch_is_rejected(env):  # 採用したひな形の SHA が違えば差し込まない（差戻し）
+    c, cfg, tmp, vals, tpl = env
+    cfg["template_sha256"] = "0" * 64
+    c = coo_mod.COO(tmp / "state4", dict(LIM), dict(ff.TRIAL_ROLES), ff.make_handlers(cfg), ff.WORKFLOWS, {"03"}, dict(AP), clock=Clock())
+    c.register_project(PROJ)
+    for _ in range(3):
+        c.tick()
+    t = c.engine.get(c.get_project("P-FR-1")["steps"]["write"]["task_id"])
+    assert t["status"] == "rejected" and t["attempts"] == 1
+    assert not (tmp / "out" / "架空市_無償診断レポート.pptx").exists()
+    cfg["template_sha256"] = hashlib.sha256(tpl.read_bytes()).hexdigest()           # 正しい SHA なら通る
+    c2 = coo_mod.COO(tmp / "state5", dict(LIM), dict(ff.TRIAL_ROLES), ff.make_handlers(cfg), ff.WORKFLOWS, {"03"}, dict(AP), clock=Clock())
+    c2.register_project(PROJ); c2.tick()
+    assert c2.engine.get(c2.get_project("P-FR-1")["steps"]["write"]["task_id"])["status"] == "succeeded"
