@@ -77,6 +77,17 @@ def get_municipality(records: list, name: str | None = None, municipality_id: st
     return hit[0]
 
 
+PENDING_MARK = "PENDING_FORMAL_POINTER_APPROVAL"
+
+
+def activation_notice(rec: dict) -> str | None:
+    """根拠データが『正式ポインタ承認待ち』なら、社長確認に添える注記を返す（使うのは止めない。D-049）。"""
+    st = (rec.get("selector_metadata") or {}).get("activation_state") or ""
+    if PENDING_MARK in st:
+        return f"根拠データが正式ポインタ承認待ちです（activation_state={st}）。自治体への送信は、承認されるまで止めてください。"
+    return None
+
+
 def organize(rec: dict, source: dict, pins: dict | None = None) -> dict:
     """1 自治体の値を、レポート制作 AI が使う形に整理する（値は書き換えない）。"""
     pins = pins or load_pins()
@@ -104,6 +115,7 @@ def organize(rec: dict, source: dict, pins: dict | None = None) -> dict:
             "report_fields": dict(rec["source_fields"]),  # FMT の図形名→文字（正式データのまま）
             "provenance": {**source, "record_selector": rec["selector_metadata"]["selector_version"],
                            "note": "2 つの集計単位（出現率 1,741／ランキング 1,719）は名前で結合していない"},
+            "notices": [n for n in [activation_notice(rec)] if n],
             "notes": ["UNVERIFIED_ZERO は、値ファイルに状態列がないため、Mart で『明示的な 0』か『行なし』かを未確認"]}
 
 

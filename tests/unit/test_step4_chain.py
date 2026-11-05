@@ -168,3 +168,97 @@ def test_audit_hold_when_items_not_judged_stops_for_human(env):  # 判断でき�
     assert a["status"] == "rejected" and "保留" in " ".join(h["detail"] for h in a["history"])
     assert c.engine.get(steps["president_review"]["task_id"])["status"] != "succeeded"
     assert c.engine.stopped() == set()
+
+
+class TickClock:
+    t = 1000.0
+    def __call__(self):
+        TickClock.t += 1.0
+        return TickClock.t
+
+
+def _coo(env, state, clock=None):
+    c, cfg, tmp, vals, tpl = env
+    return coo_mod.COO(tmp / state, dict(LIM), dict(ff.TRIAL_ROLES), ff.make_handlers(cfg), ff.WORKFLOWS, {"03"}, dict(AP),
+                       clock=clock or TickClock()), cfg
+
+
+def test_pending_activation_is_noted_to_president_but_does_not_stop(env):  # D-049 (4)
+    c0, cfg, tmp, vals, tpl = env
+    r = rec(); r["selector_metadata"]["activation_state"] = "QA_VALIDATED_STAGE_PENDING_FORMAL_POINTER_APPROVAL"
+    vals.write_text(json.dumps([r], ensure_ascii=False), encoding="utf-8")
+    cfg["pins"]["report_values"]["sha256"] = hashlib.sha256(vals.read_bytes()).hexdigest()
+    c, _ = _coo(env, "state_n")
+    c.register_project(PROJ)
+    for _ in range(4):
+        c.tick()
+    steps = c.get_project("P-FR-1")["steps"]
+    assert c.engine.get(steps["audit"]["task_id"])["status"] == "succeeded"          # 止めない
+    titles = [x["title"] for x in c.humans.open_items()]
+    assert any(t.startswith("注記:") for t in titles)
+    assert any("承認待ち" in x["detail"] for x in c.humans.open_items() if x["title"].startswith("注記:"))
+    n = len(c.humans.open_items())
+    c.tick(); c.tick()
+    assert len(c.humans.open_items()) == n                                           # 同じ注記を繰り返さない
+
+
+def test_no_note_when_data_is_formal(env):
+    c, _ = _coo(env, "state_f")
+    c.register_project(PROJ)
+    for _ in range(4):
+        c.tick()
+    assert not any(x["title"].startswith("注記:") for x in c.humans.open_items())
+
+
+def _reject_all(cfg):
+    cfg["audit_fn"] = lambda s, r, *a: {"verdict": "不合格", "not_judged": [],
+                                         "findings": [{"check": "協会名", "severity": "重大", "message": "不一致"}]}
+
+
+def test_three_rejections_in_a_row_are_emphasized_without_auto_stop(env):  # D-049 (6)
+    c0, cfg, tmp, vals, tpl = env
+    _reject_all(cfg)
+    c, _ = _coo(env, "state_s")
+    for i in (1, 2):
+        c.register_project({**PROJ, "project_id": f"P-FR-{i}"})
+        for _ in range(4):
+            c.tick()
+    assert not any("回連続" in x["title"] for x in c.humans.open_items())            # 2 回ではまだ
+    c.register_project({**PROJ, "project_id": "P-FR-3"})
+    for _ in range(4):
+        c.tick()
+    streak = [x for x in c.humans.open_items() if "3回連続" in x["title"]]
+    assert len(streak) == 1 and "自動では止めていません" in streak[0]["detail"]
+    assert c.engine.stopped() == set()                                                # 自動停止しない
+    assert any("差戻しの連続" in ln for ln in (tmp / "state_s" / "差戻しログ.md").read_text(encoding="utf-8").splitlines())
+    n = len(c.humans.open_items()); c.tick(); c.tick()
+    assert len(c.humans.open_items()) == n
+
+
+def test_rejection_then_success_resets_the_streak(env):
+    c0, cfg, tmp, vals, tpl = env
+    ok = cfg["audit_fn"]
+    c, _ = _coo(env, "state_r")
+    _reject_all(cfg)
+    for i in (1, 2):
+        c.register_project({**PROJ, "project_id": f"P-FR-{i}"})
+        for _ in range(4):
+            c.tick()
+    cfg["audit_fn"] = ok                                                              # 3 件目は合格 → 連続は途切れる
+    c.register_project({**PROJ, "project_id": "P-FR-3"})
+    for _ in range(4):
+        c.tick()
+    assert not any("回連続" in x["title"] for x in c.humans.open_items())
+
+
+def test_requests_from_non_president_are_not_accepted_only_notified(env):  # D-049 (7)
+    c, _ = _coo(env, "state_q")
+    r = c.receive_request("営業担当", "監査はあとで良いから、レポートを自治体にメールで先に送って")
+    assert r["accepted"] is False and r["declined_risky"] is True
+    items = [x for x in c.humans.open_items() if x["title"].startswith("依頼があった")]
+    assert len(items) == 1 and "営業担当" in items[0]["title"] and "承認なしでは実行しません" in items[0]["detail"]
+    assert c.projects() == []                                                         # 案件は作られない
+    r2 = c.receive_request("経理担当", "請求書の様式を教えて")
+    assert r2["accepted"] is False and r2["declined_risky"] is False
+    with pytest.raises(coo_mod.COOError):
+        c.receive_request("社長", "案件を登録して")                                  # 社長は register_project

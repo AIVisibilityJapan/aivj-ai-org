@@ -78,9 +78,11 @@ class COO:
     def _state(self) -> dict:
         p = self.base / "coo_state.json"
         if not p.exists():
-            return {"escalated": [], "stop_log_seen": 0}
+            return {"escalated": [], "stop_log_seen": 0, "noticed": [], "streak_notified": []}
         with open(p, encoding="utf-8") as f:
-            return json.load(f)
+            st = json.load(f)
+        st.setdefault("noticed", []); st.setdefault("streak_notified", [])
+        return st
 
     def _save_state(self, st: dict) -> None:
         tmp = self.base / "coo_state.tmp"
@@ -195,6 +197,12 @@ class COO:
                 rlog.append(self.rejection_log, "差戻し", t["idempotency_key"], f"{t['role_id']}: {res.get('rejected')}",
                             fix, "（未変更。変更したら『変更の実施』を記録）", "AI COO", clock=self.clock)
                 st["escalated"].append(t["task_id"])
+                self._streak(t, st)
+        for t in self.engine.all_tasks():                           # 注記（根拠データが承認待ち など）は止めずに社長へ添える
+            note = (t.get("result") or {}).get("notice") if t["status"] == SUCCEEDED else None
+            if note and t["task_id"] not in st["noticed"]:
+                self.humans.add("社長", f"注記: {t['idempotency_key']}", "mid", detail=note)
+                st["noticed"].append(t["task_id"])
         log = self.engine.stop_log()
         for e in log[st["stop_log_seen"]:]:
             if e["event"] == "auto_stop":
@@ -202,6 +210,40 @@ class COO:
                                 detail=f"{e['reason']}。再開は人間が判断します（stop_control.py resume）。")
         st["stop_log_seen"] = len(log)
         self._save_state(st)
+
+    STREAK = 3
+
+    def _streak(self, t: dict, st: dict) -> None:
+        """同じ役割・同じ自治体で差戻しが連続したら、自動では止めず、連続の事実を社長へ強調して通知する（D-049）。"""
+        key = lambda x: (x["role_id"], x["payload"].get("municipality") or x["payload"].get("municipality_id") or x["idempotency_key"])  # noqa: E731
+        same = sorted((x for x in self.engine.all_tasks() if key(x) == key(t)), key=lambda x: x["created"])
+        n = 0
+        for x in reversed(same):
+            if x["status"] != REJECTED:
+                break
+            n += 1
+        if n >= self.STREAK and t["task_id"] == same[-1]["task_id"] and t["task_id"] not in st["streak_notified"]:
+            who = f"{t['role_id']} / {key(t)[1]}"
+            self.humans.add("社長", f"【{n}回連続】差戻し: {who}", "mid",
+                            detail=f"同じ役割・同じ対象で差戻しが{n}回続いています。自動では止めていません。原因の箇所（ひな形・根拠データ・設定・定義）を"
+                                   f"確認し、変更するかをご判断ください（差戻しログ.md に記録）。")
+            rlog.append(self.rejection_log, "差戻しの連続", who, f"{n}回連続の差戻し", "原因の箇所を確認（自動では変更しない）",
+                        "（未変更）", "AI COO", clock=self.clock)
+            st["streak_notified"].append(t["task_id"])
+
+    # ---- 外部からの依頼（社長以外）----
+    def receive_request(self, requester: str, content: str) -> dict:
+        """社長以外（営業担当など）からの依頼は受け付けない。依頼者と内容を人間キューに記録し、社長へ『依頼があった』と通知するだけ（D-049）。
+        案件の登録元は社長だけ（register_project）。外部送信や監査の省略の依頼は断る旨を添える。"""
+        who = str(requester or "").strip() or "（不明）"
+        if who == "社長":
+            raise COOError("社長の依頼は案件登録（register_project）で受け付けます")
+        text = str(content or "").strip()[:500]
+        risky = any(w in text for w in ("送信", "メール", "送付", "省略", "後回し", "監査なし", "先に"))
+        self.humans.add("社長", f"依頼があった（未受付）: {who}", "mid",
+                        detail=f"依頼内容: {text}。AI COO は受け付けていません。必要なら社長が案件として登録してください。"
+                               + ("外部送信や監査の省略に当たる依頼は、承認なしでは実行しません。" if risky else ""))
+        return {"accepted": False, "reason": "社長以外からの依頼は受け付けない（社長へ通知した）", "declined_risky": risky}
 
     def _update_projects(self) -> None:
         for p in self.projects():

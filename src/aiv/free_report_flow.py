@@ -124,14 +124,21 @@ def make_handlers(cfg: dict) -> dict:
             raise AuditRejected(f"監査 不合格（差戻し）: {top}")
         if res["verdict"] == "保留":
             raise AuditRejected("監査 保留（差戻し）: 判断できなかった項目があるため止める。人が決める: " + "; ".join(str(x) for x in res["not_judged"]))
-        return {"verdict": res["verdict"], "findings": res["findings"], "not_judged": res["not_judged"],
-                "pptx": w["pptx"], "pptx_sha256": w["pptx_sha256"]}, 0.0
+        out = {"verdict": res["verdict"], "findings": res["findings"], "not_judged": res["not_judged"],
+               "pptx": w["pptx"], "pptx_sha256": w["pptx_sha256"]}
+        note = vr.activation_notice(rec)
+        if note:
+            out["notice"] = note                      # COO が人間キューに『注記』として載せる（止めない）
+        return out, 0.0
 
     def president_review(payload, up):
         a = only(up)
         if a["verdict"] == "不合格":
             raise AuditRejected("不合格の成果物は確認工程に進めない")
-        return {"status": "社長の最終確認済み（外部への送付はしていない）", "pptx": a["pptx"]}, 0.0
+        out = {"status": "社長の最終確認済み（外部への送付はしていない）", "pptx": a["pptx"]}
+        if a.get("notice"):
+            out["notice"] = a["notice"]
+        return out, 0.0
 
     return {k: _rejecting(v) for k, v in {"AI-03-01": analyze, "AI-04-01": diagnose, "AI-03-05": write,
                                           "AI-06-06": audit, "AI-000": president_review}.items()}
