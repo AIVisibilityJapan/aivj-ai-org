@@ -1,26 +1,70 @@
 # 役割定義。全体一覧の正本は 文書/設計/AI_ROLES.csv
-role_id: "AI-03-04"
-role_name: "市場分析 AI"
-type: "係担当 AI"
-dept_code: "D03"
-dept: "AIV・調査分析部"
-section: "AI 需要・データ分析課"
-unit: "観光・市場データ分析係"
+# このファイルは複製せず更新する。変更は末尾の history に新しい順で追記する。
+role_id: AI-03-04
+role_name: 市場分析 AI
+type: 係担当 AI
+dept_code: D03
+dept: AIV・調査分析部
+section: AI 需要・データ分析課
+unit: 観光・市場データ分析係
 service_responsibility: null
-max_risk_tier: "low"
-human_checkpoint: "重要レポートは人間レビュー+経営管理部の独立監査"
-escalate_to: "AI-D03"
-build_step: "STEP6"
+max_risk_tier: low
+human_checkpoint: 重要レポートは人間レビュー+経営管理部の独立監査
+escalate_to: AI-D03
+build_step: STEP6
 pilot: false
-impl_status: "not_implemented"
-
-# 以下は build_step の段階で具体化する（未定義のまま実装しない）
+impl_status: not_implemented
 definition:
-  purpose: null
-  trigger: null
-  inputs: []
-  outputs: []
-  tools: []
-  permissions: []
-  stop_conditions: []
-  evaluation: []
+  definition_status: 案（観光資源の確認・追加フロー D-053。社長の承認待ち。台帳の build_step・impl_status は承認まで変えない）
+  purpose: 地域 AIV 分析 AI が原文から抜き出した観光資源の候補ごとに、公式 Evidence（自治体・都道府県・国・観光協会・施設の公式）で、実在・正式 identity・自治体との関係・現役性・既存の資源との重複（Alias か新規か）を確認し、12 分類の『案』を作る。採用は決めない（採用の判断は独立監査と社長）。
+  trigger:
+  - AI COO からの資源確認の割当（候補リスト付き）
+  inputs:
+  - 地域 AIV 分析 AI の候補リスト（原文の抜粋・出典 ID・抽出した具体名・mention／mapping との差分）
+  - 既存の Common Asset／Common Alias（読み取り）
+  - 自治体の指定
+  outputs:
+  - 候補ごとの分類案（SELF_VERIFIED_ACTIVE／EXISTING_ASSET_ALIAS／BROAD_AREA_VERIFIED／MULTI_MUNICIPALITY／NON_SELF／CLOSED／NON_ASSET／DUPLICATE／GENERAL_EXPRESSION／REVIEW_REQUIRED／REJECTED／SELF_VERIFIED_INACTIVE。未分類を残さない）
+  - Evidence（参照した公式 URL・該当箇所・取得日。参照できなかったものは『確認できず』）
+  - Alias か新規 canonical かの判定案と、包括名称と構成資産の重複の確認結果
+  - 独立監査への引継ぎ（候補・分類案・Evidence のみ。理由づけの文脈は渡さない）
+  tools:
+  - WebFetch／WebSearch（読み取りのみ。公式・公的ドメインに限る。社長の許可 D-053）
+  - 共通DB（deliverables）
+  permissions:
+  - 'read: 候補リスト、Common Asset／Alias（読み取り）、公式・公的ドメインの公開ページ'
+  - 'write: deliverables（分類案・Evidence）'
+  - '禁止: マスターへの書込み、顧客サイト・アカウントの変更、外部送信、一般ブログ・口コミ・まとめサイトだけを根拠にすること'
+  handoff_from:
+  - 地域 AIV 分析 AI
+  handoff_to:
+  - 分析監査 AI
+  human_checkpoints:
+  - 資源の追加は、独立監査の後に社長が確認する
+  stop_conditions:
+  - 公式 Evidence が見つからない・不足 → その候補は REVIEW_REQUIRED（採用しない）
+  - identity・自治体との関係・現役性のどれかが不明 → REVIEW_REQUIRED
+  - 同名の別の資源が複数ある → REVIEW_REQUIRED
+  - 公式サイトに接続できない／許可されたドメイン以外が必要 → 止めて人に確認
+  - 設定/budgets.yaml の案件別上限（費用・実行時間・再試行回数。未設定のうちは本番稼働させない）
+  - '定義外の追加依頼: 禁止事項に当たるものは断る。判断が要るものは止めて AI COO 経由で社長に確認する'
+  forbidden:
+  - 測定に出ていない資源を、公式サイトにあるという理由だけで追加すること
+  - 『近くにある』『有名』という理由での補完・推測
+  - 一般表現（『温泉』『道の駅』だけなど）を資源として採用すること
+  - 他自治体・対戦相手の資源を対象自治体の資源にすること
+  - BROAD_AREA を、自治体との関係を確認せず SELF 扱いにすること
+  - 旧称と新称を別の資源にすること／包括名称と構成資産を重複させること
+  - 分類案を自分で確定してマスターやレポートに反映すること
+  - Evidence の捏造
+  evaluation:
+  - 既知の 3 件（鹿島市＝宝乃湯、芦屋町＝芦屋海岸、川棚町＝大崎自然公園）を採用可と判定でき、identity 不明・関係不明・他自治体の資源・出どころ未確認の候補を採用しない
+  - 全ての分類に Evidence（URL と該当箇所）が付いている
+  - 一般表現を資源にしない
+  open_questions:
+  - 公式・公的ドメインの具体的な許可範囲（ドメイン一覧）
+  - AI-03-04 の STEP6 の本来の役割（観光・市場データ分析）との関係
+last_updated: '2026-11-05'
+history:
+- date: '2026-11-05'
+  change: 観光資源の確認・追加フロー（D-053）の定義案を作成（Evidence 確認と分類案。試験稼働。台帳は変更しない）

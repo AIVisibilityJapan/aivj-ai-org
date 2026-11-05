@@ -23,11 +23,13 @@ definition:
   - 自治体の指定（名称または municipality_id）
   - 正式データ（report_values。版・SHA を src/aiv/pins.yaml で固定）
   - 集計単位（出現率 1,741／ランキング 1,719）
+  - '資源確認の依頼（D-053）: Top3 が 3 件未満の自治体。読むもの（読み取りのみ）＝Appearance の rank1〜5・出現証跡、APA の自治体自身の WIN 推薦理由原文、Common Asset／Alias／resource mention／APA mapping／selector'
   outputs:
   - '整理済みの値（正式データの文字をそのまま。0%・欠損の状態付き: FORMAL_VALUE／UNVERIFIED_ZERO／NOT_AVAILABLE）'
   - 参照元の記録（ファイル・SHA・レコードの版）
   - 根拠データの activation_state が正式ポインタ承認待ちのときは、その旨を注記して引き継ぐ（止めない）
   - AIO 診断 AI・レポート制作 AI への引継ぎ
+  - '資源確認の候補リスト（D-053）: 原文の抜粋・出典 ID・抽出した具体名・一般表現の除外・mention／mapping／selector との差分（unreviewed_concrete_candidate、reason_to_mentions_gap、mentions_to_mapping_gap、mapping_to_selector_gap、wrong_municipality、opponent_contamination、duplicate_identity）。市場分析 AI（Evidence 確認）への引継ぎ。候補は採用ではない'
   - '整理結果の形式: JSON（municipality／metrics／resources／report_fields／provenance／notes／notices）。置き場所は案件の実行状態の結果（工程 analyze の出力）。参照元（ファイル名・SHA・レコードの版）を必ず含める'
   - '状態の付け方: 出現率は範囲（全国・ブロック・都道府県）ごと、資源は 1 件ごと。FORMAL_VALUE＝正式データに値がある、UNVERIFIED_ZERO＝値が 0%（値ファイルに状態列がなく、明示的な 0 か行なしか未確認）、NOT_AVAILABLE＝正式データの表示が『―』（欠損）'
   tools:
@@ -62,6 +64,7 @@ definition:
   - 欠損（NO_FORMAL_ROW・NOT_APPLICABLE・NOT_AVAILABLE）を 0% として扱うこと
   - 測定対象 AI への問い合わせ・API 送信・再測定・再計算（D-025・D-037）
   - 値を計算・推測・補完して作ること（『―』や空欄を 0 で埋めることを含む）
+  - '資源確認で: 一般表現（『温泉』『道の駅』だけなど）を候補にすること、近隣・有名という理由で候補を作ること、原文にない資源を挙げること、候補をレポートや整理結果に直接書き足すこと、マスターへ書き込むこと（候補の抽出まで。採用の判断は Evidence 確認・独立監査・社長）'
   evaluation:
   - 完成済みの自治体で、正式な制作値を全項目再現できる（T4-01）
   - 参照した版・SHA が記録され固定と一致、不一致で停止する（T4-02）
@@ -73,6 +76,8 @@ definition:
   - 値ファイルの SHA を公開マニフェストに載せる運用（現状は取込時にこちらで記録）
 last_updated: '2026-11-05'
 history:
+- date: '2026-11-05'
+  change: '観光資源の確認・追加フロー（D-053）を反映: Top3 が 3 件未満のとき、原文まで遡って候補リストを作る（読み取りのみ。採用は決めない）。マスターへの書込み・補完は引き続き禁止'
 - date: '2026-11-05'
   change: '優先度 B の記載整理（D-051）: 整理結果の形式と置き場所、状態の付け方（付ける単位を含む）、道具と手作業の関係（道具を正）、版の混在・マニフェスト SHA 未記録の扱い、定義外の追加依頼の扱いを追加'
 - date: '2026-11-05'
