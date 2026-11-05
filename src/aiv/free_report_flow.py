@@ -23,7 +23,7 @@ import values_reader as vr
 
 WORKFLOWS = {
     "aiv-free-report": {
-        "description": "無償診断レポート（FMT v2.22・2 枚）。社長の最終確認で止まる",
+        "description": "無償診断レポート（採用したひな形 FMT・2 枚）。社長の最終確認で止まる",
         "steps": [
             {"id": "analyze", "role": "AI-03-01", "risk": "low"},
             {"id": "diagnose", "role": "AI-04-01", "risk": "low", "depends_on": ["analyze"]},
@@ -50,9 +50,9 @@ class AuditRejected(Exception):
     pass
 
 
-TPL = "ひな形 FMT v2.22（データ/private/06-STEP4作業/FMT/無償レポート_FMTv2.22.pptx）の該当の文言"
+TPL = "採用したひな形（src/aiv/pins.yaml の template。データ/private/06-STEP4作業/FMT/）の該当の文言"
 FIX_BY_CHECK = {
-    "協会名": TPL, "住所": TPL, "AI名称": TPL, "AI名称の区切り": TPL, "母数注記": TPL, "リスク表現": TPL, "外部ツール名": TPL,
+    "協会名": TPL, "住所": TPL, "AI名称": TPL, "AI名称の区切り": TPL, "母数注記": TPL, "リスク表現": TPL, "外部ツール名": TPL, "社名": TPL, "電話": TPL, "メール": TPL,
     "未差し込み": "差し込み対応表（src/aiv/report_filler.py）またはひな形の差し込み項目",
     "値の一致": "根拠データ（値ファイル）または差し込み対応表（src/aiv/report_filler.py）。どちらが正しいかを確認",
     "評価と順位": "根拠データ（値ファイル）の評価・順位。取り込み元の確認",
