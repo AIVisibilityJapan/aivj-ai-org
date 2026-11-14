@@ -1,0 +1,2 @@
+acquisition_id,acquired_at,operator,feature,database,ai_filter,query,rows,original_filename,saved_filename,sha256,bytes,exports_today,status,basis,note
+SAMPLE-0001,YYYY-MM-DDThh:mm+09:00,（操作者）,Prompt Research,jp,gpt,サンプル町,1000,topics_by_fts____jp.csv,R2_000000_YYYYMM_aivolume_gpt_s01_取得YYYYMMDD.csv,（SHA-256）,0,1,VALUE,ESTIMATE,雛形の例。架空値。追記のみ・行は書き換えない

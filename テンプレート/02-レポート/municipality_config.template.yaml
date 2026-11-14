@@ -1,0 +1,49 @@
+# このファイルは複製せず更新する（雛形。架空値のみ。実在の自治体・顧客の情報は書かない）
+# 実データは データ/private/07-R2R3作業/<自治体ID>/自治体設定.yaml に置く（Git に載せない）
+# 仕様: 文書/設計/R2R3_需要分析_サイトビジビリティ_設計.md §5.1
+schema_version: 1
+
+municipality:
+  id: "000000"                 # 地方公共団体コード（6 桁）。承認台帳の自治体 ID と同じ。採番・承認番号の発行は社長
+  name: "サンプル町"
+  prefecture: "サンプル県"
+  official_site_domain: "sample-kanko.example.jp"   # ③の対象サイト（サンプルは example.jp。実在しない）
+
+period:
+  r2_months: 12                # ②: 12 か月分
+  r2_start: "YYYY-MM"          # 取得できた月の範囲が確認できるまで未記入（不明は null）
+  r2_end: "YYYY-MM"
+  r3_month: "YYYY-MM"          # ③: 測定は 1 か月分。前期比は出さない
+
+source:
+  database: "jp"               # 画面の既定は US。必ず jp を明示する
+  ai_filters:                  # AI Overviews とそれ以外は別に取得する
+    - { id: "aiOverview", label: "AI Overviews", group: "search_summary" }
+    - { id: "gpt",        label: "ChatGPT",       group: "chat_ai" }
+    - { id: "gemini",     label: "Gemini",        group: "chat_ai" }
+    - { id: "ai_mode",    label: "Google AI モード", group: "chat_ai" }   # 画面の URL の値は未確認
+
+seeds:                         # ②の検索語（人が確定する。AI は案まで）
+  - { no: 1, term: "サンプル町",   kind: "地域名" }
+  - { no: 2, term: "サンプル温泉", kind: "地区・施設名" }
+  - { no: 3, term: "サンプル 観光", kind: "テーマ語" }
+
+exclude_terms:                 # 同名・類似地域の除外（人が確認する）
+  - { term: "（同名の別地域）", reason: "別の都道府県にある同名の地域" }
+
+comparison_sites:              # ③: 契約時に運営者と協議して固定（5〜6 件）。同名地域を除く
+  - { domain: "other-a.example.jp", note: "他地域の公式観光サイト" }
+
+classification:                # ②: 指名／非指名の分類
+  reviewers: ["担当者A", "担当者B"]   # 独立に確認する 2 名
+  kappa_threshold: 0.8                # これ未満の軸は分類をやり直す
+
+ga4:                           # ③: 顧客から提供を受ける（承認後）
+  provided: false
+  method: null
+
+pricing:
+  contract_unit: null          # 未設定（社長決定）
+  price: null
+
+notes: ""
