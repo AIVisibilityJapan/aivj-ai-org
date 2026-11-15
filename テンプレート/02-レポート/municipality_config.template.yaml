@@ -31,8 +31,19 @@ seeds:                         # ②の検索語（人が確定する。AI は�
 exclude_terms:                 # 同名・類似地域の除外（人が確認する）
   - { term: "（同名の別地域）", reason: "別の都道府県にある同名の地域" }
 
+scope_rule: >                  # 対象範囲の規則（設計書 §5.1）
+  (1) 除外語を含む話題は対象外。(2) 自治体名を含まない話題（他の自治体が主題）は対象外。
+  (3) 地域を特定できる語を含み、除外語を含まない話題は対象。(4) 地域を特定できない話題は「要確認」とし、人が判定する。
+
 comparison_sites:              # ③: 契約時に運営者と協議して固定（5〜6 件）。同名地域を除く
   - { domain: "other-a.example.jp", note: "他地域の公式観光サイト" }
+
+brand_profile:                 # ③: ブランド分析の登録（承認後。枠は契約による）
+  domain: "sample-kanko.example.jp"
+  profile_id: null
+  target_region: "Japan"
+  target_language: "日本語"
+  registered_on: null
 
 classification:                # ②: 指名／非指名の分類
   reviewers: ["担当者A", "担当者B"]   # 独立に確認する 2 名
@@ -45,5 +56,7 @@ ga4:                           # ③: 顧客から提供を受ける（承認後
 pricing:
   contract_unit: null          # 未設定（社長決定）
   price: null
+
+approvals: []                  # 承認台帳の承認番号（例: PRXM-000000-YYYYMMDD-01）
 
 notes: ""

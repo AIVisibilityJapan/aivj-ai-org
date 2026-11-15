@@ -4,7 +4,7 @@ AIV・AIO 診断レポートなどのレポートの雛形。
 
 ## 置いてよいもの
 - 顧客名を含まない雛形。
-- R2・R3 の自治体設定の雛形（municipality_config.template.yaml）と取得ログの雛形（acquisition_log.template.csv）。架空値のみ。実データは データ/private/07-R2R3作業/ に置く。
+- R2・R3 の自治体設定の雛形（municipality_config.template.yaml）・取得ログの雛形（acquisition_log.template.csv）・承認台帳の雛形（approval_ledger_r2r3.template.csv）。架空値のみ。実データは データ/private/07-R2R3作業/ に置く。
 
 ## 置かないもの
 - 顧客固有の情報・実案件の成果物（`データ/private/` に置く）。
@@ -13,5 +13,6 @@ AIV・AIO 診断レポートなどのレポートの雛形。
 測定値は正式な版数・SHA を固定して参照する。0% と欠損を区別する表示ルールに従う（文書/入力資料/測定手法_取込メモ.md）。顧客の実データは置かない。
 
 ## 更新履歴
+- 2026-11-15: 承認台帳の雛形（approval_ledger_r2r3.template.csv）を追加
 - 2026-11-15: R2・R3 の自治体設定・取得ログの雛形を追加（文書/設計/R2R3_需要分析_サイトビジビリティ_設計.md）
 - 2026-11-04: フォルダを作成（D-031）

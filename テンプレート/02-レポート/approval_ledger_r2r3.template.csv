@@ -1,0 +1,2 @@
+approval_ref,kind,prefecture_code,prefecture,municipality,municipality_id,approved_on,seq,approver,scope,acquisition_ids,note
+PRXM-000000-YYYYMMDD-01,PRXM,00,サンプル県,サンプル町,000000,YYYY-MM-DD,01,（承認者）,（承認した操作の範囲。除外するものも書く）,SAMPLE-0001,雛形の例。架空値。追記のみ・行は書き換えない
