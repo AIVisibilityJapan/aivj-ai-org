@@ -226,3 +226,25 @@ def test_unknown_id_stops(marts):
 
 def test_norm_id():
     assert T.norm_id("304018") == "MUNI_304018" and T.norm_id("MUNI_304018") == "MUNI_304018"
+
+
+def test_accept38_compare_detects_match_and_diff(marts):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+    import aiv_r1_values_accept38 as A
+    _, v = run_one(marts, "MUNI_M3")
+    s = v["slots"]
+    ref = {"municipality_id": "MUNI_M3", "municipality": "市M3", "national_rank": 3, "national_grade": s["G08.rank.overall.national"]["band"]["grade"],
+           "region_rank": 3, "region_population": 6, "region_grade": s["G08.rank.overall.region_block"]["band"]["grade"],
+           "prefecture_rank": 3, "prefecture_population": 4, "prefecture_grade": s["G08.rank.overall.prefecture"]["band"]["grade"],
+           "national_rate": A.pct(s["G03.overall.national"]["value"]), "region_rate": A.pct(s["G03.overall.region_block"]["value"]),
+           "prefecture_rate": A.pct(s["G03.overall.prefecture"]["value"]), "negative_count": 5,
+           "source_fields": {"HIGH_VALUE": A.cats(s, "G03.high_categories"), "LOW_VALUE": A.cats(s, "G03.low_categories"),
+                             "COMP_R1C2": "市M1（県P01）", "COMP_R1C3": "市M2（県P01）", "COMP_R1C4": "市M4（県P01）",
+                             "COMP_R2C1": "温泉", "COMP_R2C2": "x", "COMP_R2C3": "x", "COMP_R2C4": "x",
+                             "COMP_R3C1": "温泉", "COMP_R3C2": "x", "COMP_R3C3": "x", "COMP_R3C4": "x"}}
+    rows = A.compare(ref, v)
+    ok = {r["item"]: r["match"] for r in rows}
+    assert ok["APA総合 全国順位"] == "OK" and ok["出現率 national"] == "OK" and ok["ネガティブ件数"] == "OK"
+    assert ok["競合 総合 近接1"] == "OK" and ok["競合 総合 近接3"] == "OK"
+    ref["negative_count"] = 6
+    assert {r["item"]: r["match"] for r in A.compare(ref, v)}["ネガティブ件数"] == "DIFF"
