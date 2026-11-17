@@ -44,11 +44,12 @@ KNOWN_EXCEPTIONS = {
     ("MUNI_412015", "prefecture", "overall_scope_rate", ""), ("MUNI_412015", "prefecture", "category_scope_rate", "PUR_08"),
 }
 EXCEPTION_IDS = {k[0] for k in KNOWN_EXCEPTIONS}
-# 測定側（Codex）の回答 2026-11-17。原記録は未確認。報告書の本文には載せない（D-061）
+# モデル名（社長決定 D-063）。values.json の meta にだけ記録し、レポート本文には載せない（D-061）
 MODELS = {
-    "appearance": {"ChatGPT": {"model": None, "status": "NOT_AVAILABLE",
-                               "note": "正式 Runtime の既定は gpt-4.1-mini だが、本番 14,592 件の全件を示す manifest が未確認"}},
-    "apa": {"ChatGPT": {"model": "gpt-5.4-mini-2026-03-17", "status": "VALUE", "note": "Responses API、reasoning.effort=none。11,175 比較で model・model_version が全件一致の監査記録あり（Codex 回答）"}},
+    "appearance": {"ChatGPT": {"model": "gpt-4.1-mini", "status": "VALUE", "source": "社長回答 2026-11-17（D-063）",
+                               "note": "本番 14,592 件の全件を示す production manifest は未確認（Codex に所在を確認中）"}},
+    "apa": {"ChatGPT": {"model": "gpt-5.4-mini", "status": "VALUE", "source": "社長回答 2026-11-17（D-063）",
+                        "note": "Codex の記録は gpt-5.4-mini-2026-03-17、Responses API、reasoning.effort=none。11,175 比較で model・model_version が全件一致の監査記録あり"}},
 }
 EVAL_IDS = ["overall", "hot_spring", "nature", "history_culture", "gourmet", "urban_tourism", "solo_travel", "couple_travel",
             "family_travel", "friends_travel", "day_trip", "overnight", "spring", "summer", "autumn", "winter"]
