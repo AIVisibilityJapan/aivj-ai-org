@@ -8,12 +8,14 @@
 - `aiv_r1_values.py`: 正式データ（pointer と SHA 固定・読み取り専用）から 1 自治体分の値ファイル（values.json・slot_status.csv・evidence・manifest.json）を作る。`py scripts\aiv_r1_values.py --ids 304018`。ゲートが 1 つでも失敗したら値ファイルを作らずに止まる。設計: `文書/設計/R1_T1_値取り出し_実装設計.md`。
 - `aiv_r1_values_accept38.py`: 無償レポート作成済み 38 自治体の値と突き合わせる受入確認（読み取り専用）。2026-11-17 の実行は 950 項目すべて一致。
 - `aiv_r1_cell_size_probe.py`・`aiv_r1_t1_probe.py`・`aiv_r1_p7_exception_probe.py`: 設計時の事前確認（セル数・再現・例外 4 行の原因）。読み取りのみ。
+- `aiv_r1_run_probe.py`: API の応答記録（Batch の output.jsonl など）から、モデル名と作成日時を全件集計する（読み取り専用。API 送信・書き込みなし）。`py scripts\aiv_r1_run_probe.py --root "<production_runs のフォルダ>"`。
 - 試験は `tests/unit/test_r1_values.py`。PC で pytest が一時フォルダの権限で失敗するときは、`$env:TEMP = "C:\Users\user\pytest-tmp"; $env:TMP = $env:TEMP` を先に実行する。
 
 ## 更新履歴（新しい順）
 
 | 日付 | 変更 |
 |---|---|
+| 2026-11-19 | aiv_r1_run_probe.py（測定日・モデルの確認）を追加 |
 | 2026-11-19 | R1 の値取り出し・受入確認・事前確認のスクリプトの説明を追加 |
 | 2026-11-04 | validate_roles.py を追加（2-2） |
 

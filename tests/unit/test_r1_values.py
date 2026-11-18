@@ -248,3 +248,16 @@ def test_accept38_compare_detects_match_and_diff(marts):
     assert ok["競合 総合 近接1"] == "OK" and ok["競合 総合 近接3"] == "OK"
     ref["negative_count"] = 6
     assert {r["item"]: r["match"] for r in A.compare(ref, v)}["ネガティブ件数"] == "DIFF"
+
+
+def test_run_probe_counts_models_and_times(tmp_path):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts"))
+    import aiv_r1_run_probe as P
+    p = tmp_path / "output.jsonl"
+    rows = [{"custom_id": "a", "response": {"body": {"model": "m1", "created": 1785888000}}},
+            {"custom_id": "b", "response": {"body": {"model": "m1", "created": 1785974400}}},
+            {"custom_id": "b", "response": {"body": {"model": "m2", "created_at": 1785900000}}}]
+    p.write_text("\n".join(json.dumps(r) for r in rows) + "\nnot json\n", encoding="utf-8")
+    r = P.scan_file(p)
+    assert r["lines"] == 4 and r["bad"] == 1 and r["models"] == {"m1": 2, "m2": 1} and r["dup_ids"] == 1
+    assert r["times"] == (1785888000.0, 1785974400.0)
