@@ -218,6 +218,20 @@ def shape_map(v: dict, issue: str) -> dict:
     return t
 
 
+# 測定日の欄が「10月1日～10月31日」など長い日付でも枠（区切り線）に収まるよう、測定日と投入質問数の境界を右へ動かす。
+# 文面・文字の大きさは変えない。図形名が無ければ何もしない。
+COND_DIV_SHIFT_EMU = 400000
+COND_SHIFT_SHAPES = ("COND_DIV_3", "COND_LABEL_QUERIES", "COND_VALUE_QUERIES")
+
+
+def widen_cond_date(slide) -> None:
+    names = {sh.name: sh for sh in slide.shapes}
+    if not all(n in names for n in COND_SHIFT_SHAPES):
+        return
+    for n in COND_SHIFT_SHAPES:
+        names[n].left = names[n].left + COND_DIV_SHIFT_EMU
+
+
 def build(template: Path, v: dict, issue: str, out: Path):
     prs = Presentation(str(template))
     t = shape_map(v, issue)
@@ -227,6 +241,8 @@ def build(template: Path, v: dict, issue: str, out: Path):
                 set_text(sh, t[sh.name])
                 if sh.name in ("HIGH_VALUE", "LOW_VALUE"):
                     wrap_value_box(sh, t[sh.name])
+    for s in prs.slides:
+        widen_cond_date(s)
     left = [sh.text_frame.text for s in prs.slides for sh in s.shapes if sh.has_text_frame and "{{" in sh.text_frame.text]
     if left:
         raise RuntimeError(f"未置換の項目があります: {left}")
@@ -267,6 +283,8 @@ def main():
     ap.add_argument("--all-allowed", action="store_true", help="Gate許可の全自治体を作る。作れない自治体は理由を manifest.csv に残して続行")
     ap.add_argument("--limit", type=int, default=0, help="--all-allowed の作成数の上限（試験用）")
     ap.add_argument("--out", default=None)
+    ap.add_argument("--measurement", default="2026年9月測定", help="正式版の保存先フォルダ名（出力/無償レポート/<測定期>/PowerPoint/）")
+    ap.add_argument("--overwrite", action="store_true", help="正式版の保存先に同名ファイルがあっても上書きする（既定は停止）")
     ap.add_argument("--formal-root", default=None, help="正式ルート（…\\AI Visibility）。指定すると、現行 pointer の資源スロット表とGate判定表を使う（SHA照合つき）")
     ap.add_argument("--slots-file", default=None, help="試作用: 資源3枠の元になるスロット表を指定（追記stageの確認用。正式版ではない）")
     ap.add_argument("--ignore-gate", action="store_true", help="試作用: Gateが通っていない自治体でも試作を作る（正式版ではない）")
@@ -281,7 +299,15 @@ def main():
     today = date.today()
     issue = a.issue or f"{today.year}年{today.month}月{today.day}日"
     stamp = f"{today:%Y%m%d}"
-    out_root = Path(a.out).resolve() if a.out else work / "出力" / f"無償レポート_{a.tag}_{stamp}"
+    # 正式版（--formal-root 指定・試作系の指定なし・--ids のみ）は 出力/無償レポート/<測定期>/PowerPoint/ へ。
+    # 試験・試作・一括は 出力/無償レポート/旧版・試作/ へ（正式版の置き場に混ぜない）。
+    is_formal = bool(a.formal_root and a.ids and not (a.slots_file or a.assets is not None or a.ignore_gate or a.all_allowed or a.verify38))
+    if a.out:
+        out_root = Path(a.out).resolve()
+    elif is_formal:
+        out_root = work / "出力" / "無償レポート" / a.measurement / "PowerPoint"
+    else:
+        out_root = work / "出力" / "無償レポート" / "旧版・試作" / f"無償レポート_{a.tag}_{stamp}"
     if a.verify38:
         vals = json.loads((work / "入力" / "report_values_s1550_38.json").read_text(encoding="utf-8-sig"))
         bad, tot = 0, 0
@@ -351,7 +377,10 @@ def main():
         if not allowed:
             print(f"SKIP {v['name']}: Gate が通っていません（{gate.decision_reason.iloc[0] if len(gate) else '不明'}）")
             continue
-        out = out_root / f"{v['name']}_無償診断レポート_{a.tag}.pptx"
+        out = out_root / (f"{v['name']}_無償診断レポート.pptx" if is_formal and not a.out else f"{v['name']}_無償診断レポート_{a.tag}.pptx")
+        if is_formal and not a.out and out.exists() and not a.overwrite:
+            print(f"STOP {v['name']}: 既に存在します（{out}）。旧版・試作へ移してから再実行するか、--overwrite を付けてください")
+            continue
         build(tpl, v, issue, out)
         print(json.dumps({"municipality": v["name"], "out": str(out), "warn": v["warn"], "values": {
             "rank": v["rank"], "rate": v["rate"], "grades": v["grades"], "high": v["high"], "low": v["low"],
