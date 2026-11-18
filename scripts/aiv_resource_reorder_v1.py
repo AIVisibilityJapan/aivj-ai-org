@@ -11,7 +11,7 @@
 - 承認番号は指定CSVの列に人が書く。このツールは採番しない。
 
 指定CSV（--spec-file）の列:
-  op                  SLOT / RENAME / ALIAS / NEWASSET
+  op                  SLOT / RENAME / ALIAS / NEWASSET / ADDRNOTE
   municipality_id     対象自治体（全行で同一であること）
   asset_id            既存の資産ID。新規は NEW:<正規名>（決定的採番）
   name                RENAME: 新しい正規名 / NEWASSET: 正規名 / ALIAS: 追加する別名
@@ -21,6 +21,8 @@
   new_resource_type / new_resource_subtype   NEWASSET: 種別（必須）
   address_original, address_municipality, official_evidence_url, evidence_kind(APA_REASON/APPEARANCE_CANDIDATE)
                       NEWASSET: 必須（実在と所在の根拠）
+                      ADDRNOTE: address_original だけ必須（既存資産の住所注記を、この文言に置き換える。master と relation の notes の address= の部分だけを直し、
+                      旧い文言は ADDRESS_NOTE_UPDATED の記録として残す。名称・種別・関係・枠・別名は変えない）
   audit_ref, president_confirmation_ref   全行で必須（人が記入。空なら不採用）
 """
 from __future__ import annotations
@@ -129,7 +131,7 @@ def main():
         for c in ("audit_ref", "president_confirmation_ref"):
             if not r[c].strip():
                 raise Stop(f"{c} が空（人が記入する。このツールは採番しない）: 行{i + 2}")
-        if r["op"] not in ("SLOT", "RENAME", "ALIAS", "NEWASSET"):
+        if r["op"] not in ("SLOT", "RENAME", "ALIAS", "NEWASSET", "ADDRNOTE"):
             raise Stop(f"op が不正: {r['op']}")
 
     names = None
@@ -242,6 +244,59 @@ def main():
             alias2 = pd.concat([alias2, pd.DataFrame([row])], ignore_index=True)
             diff.append(["alias", mun, aid, "(新行)", "", f"{old} municipality_id={mun} scope=MUNICIPALITY（改名前の名称）", ""])
 
+    # ---- 2b. ADDRNOTE（既存資産の住所注記の置き換え。notes の address= の部分だけ）----
+    addr_assets = set()
+    for _, r in spec[spec.op == "ADDRNOTE"].iterrows():
+        aid, new = r["asset_id"].strip(), r["address_original"].strip()
+        m = master2[master2.asset_id == aid]
+        if len(m) != 1:
+            problems.append(f"ADDRNOTE: 資産IDがマスターに1件でない: {aid}")
+            continue
+        x = m.iloc[0]
+        if x.asset_status != "ACTIVE" or x.verification_status != "VERIFIED":
+            problems.append(f"ADDRNOTE: ACTIVE/VERIFIED でない: {aid}")
+            continue
+        vm = {pre(v) for v in x.verified_municipality_ids.replace("|", ";").split(";") if v} | {pre(x.primary_municipality_id)}
+        if vm != {mun}:
+            problems.append(f"ADDRNOTE: 他の自治体にも属する資産は対象外: {aid} {sorted(vm)}")
+            continue
+        if not new or " | " in new:
+            problems.append(f"ADDRNOTE: 新しい住所注記が空、または区切り ' | ' を含む: {aid}")
+            continue
+        segs = x.notes.split(" | ")
+        k = [j for j, g in enumerate(segs) if g.startswith("address=")]
+        if len(k) != 1:
+            problems.append(f"ADDRNOTE: master の notes に address= が1つだけ無い: {aid}")
+            continue
+        old = segs[k[0]][len("address="):]
+        if old == new:
+            problems.append(f"ADDRNOTE: 新しい住所注記が現行と同一: {aid}")
+            continue
+        trail = f"ADDRESS_NOTE_UPDATED | prev_address={old} | audit={r['audit_ref']} | president={r['president_confirmation_ref']}"
+        i = m.index[0]
+        segs[k[0]] = f"address={new}"
+        master2.loc[i, "notes"] = " | ".join(segs) + " | " + trail
+        master2.loc[i, "updated_at"] = now
+        diff.append(["master", mun, aid, "notes", x.notes, master2.loc[i, "notes"], f"audit={r['audit_ref']}"])
+        diff.append(["master", mun, aid, "updated_at", x.updated_at, now, ""])
+        rr = rel2[(rel2.asset_id == aid) & (rel2.municipality_id.map(bare) == bare(mun)) & (rel2.relation_status == "ACTIVE")]
+        if len(rr) != 1:
+            problems.append(f"ADDRNOTE: 有効な relation 行が1件でない: {aid} {len(rr)}件")
+            continue
+        j = rr.index[0]
+        rsegs = rr.iloc[0].notes.split(" | ")
+        rk = [q for q, g in enumerate(rsegs) if g.startswith("address=")]
+        if len(rk) != 1:
+            problems.append(f"ADDRNOTE: relation の notes に address= が1つだけ無い: {aid}")
+            continue
+        rsegs[rk[0]] = f"address={new}"
+        rold = rr.iloc[0].notes
+        rel2.loc[j, "notes"] = " | ".join(rsegs) + " | " + trail
+        rel2.loc[j, "updated_at"] = now
+        diff.append(["relation", mun, aid, "notes", rold, rel2.loc[j, "notes"], f"audit={r['audit_ref']}"])
+        diff.append(["relation", mun, aid, "updated_at", rr.iloc[0].updated_at, now, ""])
+        addr_assets.add(aid)
+
     # ---- 3. ALIAS ----
     for _, r in spec[spec.op == "ALIAS"].iterrows():
         aid, al = resolve(r["asset_id"]), r["name"].strip()
@@ -351,17 +406,28 @@ def main():
     chk["master_old_rows_changed_only_rename"] = bool(
         master2.iloc[: len(master)].drop(columns=["canonical_name", "canonical_name_normalized", "updated_at", "notes"]).equals(
             master.drop(columns=["canonical_name", "canonical_name_normalized", "updated_at", "notes"]))
-        and set(master2.iloc[: len(master)].loc[~master2.iloc[: len(master)].eq(master).all(axis=1), "asset_id"]) <= set(renamed))
+        and set(master2.iloc[: len(master)].loc[~master2.iloc[: len(master)].eq(master).all(axis=1), "asset_id"]) <= set(renamed) | addr_assets)
     chk["master_dup_ids"] = int(master2.asset_id.duplicated().sum())
     chk["master_dup_names"] = int(master2.canonical_name_normalized.duplicated().sum() - master.canonical_name_normalized.duplicated().sum())
     chk["alias_old_rows_identical"] = bool(alias2.iloc[: len(alias)].equals(alias))
-    chk["relation_old_rows_identical"] = bool(rel2.iloc[: len(rel)].equals(rel))
+    rcols = [c for c in rel.columns if c not in ("notes", "updated_at")]
+    rold = rel2.iloc[: len(rel)]
+    chk["relation_old_rows_identical"] = bool(rold[rcols].equals(rel[rcols])
+                                              and set(rold.loc[~rold.eq(rel).all(axis=1), "asset_id"]) <= addr_assets)
+    # 指定した資産以外の行が master / relation / alias で変わっていない（新規行を含む）。aiv_release_build.py が確認する項目
+    spec_assets = {resolve(x) for x in spec.asset_id}
+    outside = set()
+    for new_df, old_df, nm_ in ((master2, master, "master"), (rel2, rel, "relation"), (alias2, alias, "alias")):
+        oldpart = new_df.iloc[: len(old_df)]
+        outside |= {f"{nm_}:{a_}" for a_ in oldpart.loc[~oldpart.eq(old_df).all(axis=1), "asset_id"] if a_ not in spec_assets}
+        outside |= {f"{nm_}:{a_}" for a_ in new_df.iloc[len(old_df):]["asset_id"] if a_ not in spec_assets}
+    chk["changed_outside_spec"] = sorted(outside)
     chk["alias_active_conflicts"] = int(alias2[alias2.alias_status == "ACTIVE"].duplicated(["alias", "municipality_id"]).sum())
     chk["problems"] = len(problems)
     chk["baseline_unchanged"] = {k: sha(p) for k, p in f.items()} == before
     passed = (not problems and chk["dup_asset_within_municipality"] == 0 and not chk["changed_outside_target"]
               and chk["slot_rows_same_as_baseline"] and chk["non_self_slots"] == chk["baseline_non_self_slots"]
-              and chk["target_tier_order_monotone"] and chk["master_old_rows_changed_only_rename"] and chk["master_dup_ids"] == 0
+              and not chk["changed_outside_spec"] and chk["target_tier_order_monotone"] and chk["master_old_rows_changed_only_rename"] and chk["master_dup_ids"] == 0
               and chk["master_dup_names"] == 0 and chk["alias_old_rows_identical"] and chk["relation_old_rows_identical"]
               and chk["baseline_unchanged"])
 
