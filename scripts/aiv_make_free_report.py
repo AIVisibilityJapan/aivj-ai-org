@@ -232,6 +232,16 @@ def widen_cond_date(slide) -> None:
         names[n].left = names[n].left + COND_DIV_SHIFT_EMU
 
 
+# 雛形（FMT）に残っている制作用のメモ・メタ情報（別の自治体の ID・古い測定日・発行日・個人名）を、成果物から消す。
+# スピーカーノートの本文を空にし、ファイルのプロパティの作成者・最終更新者を空にする。スライドの内容・見た目は変えない。
+def strip_template_metadata(prs) -> None:
+    for s in prs.slides:
+        if s.has_notes_slide:
+            s.notes_slide.notes_text_frame.text = ""
+    prs.core_properties.author = ""
+    prs.core_properties.last_modified_by = ""
+
+
 def build(template: Path, v: dict, issue: str, out: Path):
     prs = Presentation(str(template))
     t = shape_map(v, issue)
@@ -243,6 +253,7 @@ def build(template: Path, v: dict, issue: str, out: Path):
                     wrap_value_box(sh, t[sh.name])
     for s in prs.slides:
         widen_cond_date(s)
+    strip_template_metadata(prs)
     left = [sh.text_frame.text for s in prs.slides for sh in s.shapes if sh.has_text_frame and "{{" in sh.text_frame.text]
     if left:
         raise RuntimeError(f"未置換の項目があります: {left}")
@@ -273,6 +284,22 @@ def resolve_formal(root: Path) -> dict:
     return {"slots": slots, "gate": gate, "selector": sp["formal_selector_version"], "gate_version": gp["gate_version"], "contract": gp["source_contract_version"]}
 
 
+def export_pdf(pptx: Path, pdf: Path) -> str:
+    """PowerPoint（Windows）の「PDF として保存」で PDF を作る。PowerPoint が使えない場合は理由を返して続行する（pptx は作成済み）。"""
+    import os, subprocess
+    ps = ("$ErrorActionPreference='Stop';$app=New-Object -ComObject PowerPoint.Application;"
+          "try{$p=$app.Presentations.Open($env:AIV_SRC,-1,0,0);$p.SaveAs($env:AIV_DST,32);$p.Close()}finally{$app.Quit()}")
+    pdf.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        r = subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True, text=True, timeout=180,
+                           env={**os.environ, "AIV_SRC": str(pptx), "AIV_DST": str(pdf)})
+    except Exception as e:  # noqa: BLE001
+        return f"PDF 未作成（PowerPoint を起動できません: {type(e).__name__}）"
+    if r.returncode != 0 or not pdf.exists():
+        return f"PDF 未作成（PowerPoint での保存に失敗: {(r.stderr or r.stdout).strip()[:200]}）"
+    return "OK"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--work", default="データ/private/06-STEP4作業")
@@ -285,6 +312,7 @@ def main():
     ap.add_argument("--out", default=None)
     ap.add_argument("--measurement", default="2026年9月測定", help="正式版の保存先フォルダ名（出力/無償レポート/<測定期>/PowerPoint/）")
     ap.add_argument("--overwrite", action="store_true", help="正式版の保存先に同名ファイルがあっても上書きする（既定は停止）")
+    ap.add_argument("--no-pdf", action="store_true", help="正式版の PDF（PowerPoint の「PDF として保存」）を作らない")
     ap.add_argument("--formal-root", default=None, help="正式ルート（…\\AI Visibility）。指定すると、現行 pointer の資源スロット表とGate判定表を使う（SHA照合つき）")
     ap.add_argument("--slots-file", default=None, help="試作用: 資源3枠の元になるスロット表を指定（追記stageの確認用。正式版ではない）")
     ap.add_argument("--ignore-gate", action="store_true", help="試作用: Gateが通っていない自治体でも試作を作る（正式版ではない）")
@@ -381,8 +409,15 @@ def main():
         if is_formal and not a.out and out.exists() and not a.overwrite:
             print(f"STOP {v['name']}: 既に存在します（{out}）。旧版・試作へ移してから再実行するか、--overwrite を付けてください")
             continue
+        pdf = None
+        if is_formal and not a.out and not a.no_pdf:
+            pdf = out.parent.parent / "PDF" / f"{v['name']}_無償診断レポート.pdf"
+            if pdf.exists() and not a.overwrite:
+                print(f"STOP {v['name']}: PDF が既に存在します（{pdf}）。旧版・試作へ移してから再実行するか、--overwrite を付けてください")
+                continue
         build(tpl, v, issue, out)
-        print(json.dumps({"municipality": v["name"], "out": str(out), "warn": v["warn"], "values": {
+        pdf_result = export_pdf(out, pdf) if pdf else "対象外"
+        print(json.dumps({"municipality": v["name"], "out": str(out), "pdf": str(pdf) if pdf else None, "pdf_result": pdf_result, "warn": v["warn"], "values": {
             "rank": v["rank"], "rate": v["rate"], "grades": v["grades"], "high": v["high"], "low": v["low"],
             "comp": v["comp"], "assets": v["assets"], "neg": v["neg"]}}, ensure_ascii=False))
 
