@@ -1,0 +1,7 @@
+op,municipality_id,asset_id,name,slot,source_tier,source_record_ids,new_resource_type,new_resource_subtype,address_original,address_municipality,official_evidence_url,evidence_kind,audit_ref,president_confirmation_ref
+NEWASSET,MUNI_401307,NEW:志賀島,志賀島,,,,area,broad_area,福岡県福岡市東区志賀島,福岡市,https://www.city.fukuoka.lg.jp/shisei/kouhou-hodo/hodo-happyo/2026/documents/260508R8kaisuiyokujosuishitsuchosa.pdf,APPEARANCE_CANDIDATE,独立監査_福岡市_20261119（別担当エージェント・公開情報）,
+RENAME,MUNI_401307,AIV_ASSET_V9_40_401307_002,福岡市動植物園,,,,,,,,,,独立監査_福岡市_20261119（別担当エージェント・公開情報）,
+ALIAS,MUNI_401307,NEW:志賀島,志賀島海水浴場,,,,,,,,,,独立監査_福岡市_20261119（別担当エージェント・公開情報）,
+SLOT,MUNI_401307,AIV_ASSET_V9_40_401307_001,,1,,,,,,,,,独立監査_福岡市_20261119（別担当エージェント・公開情報）,
+SLOT,MUNI_401307,AIV_ASSET_V9_40_401307_002,,2,APPEARANCE_RANK_1_3,appearance_candidate:CAND_061612,,,,,,,独立監査_福岡市_20261119（別担当エージェント・公開情報）,
+SLOT,MUNI_401307,NEW:志賀島,,3,APPEARANCE_RANK_1_3,appearance_candidate:CAND_012061,,,,,,,独立監査_福岡市_20261119（別担当エージェント・公開情報）,
