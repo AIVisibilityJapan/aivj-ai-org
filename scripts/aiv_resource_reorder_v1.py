@@ -11,7 +11,7 @@
 - 承認番号は指定CSVの列に人が書く。このツールは採番しない。
 
 指定CSV（--spec-file）の列:
-  op                  SLOT / RENAME / ALIAS / NEWASSET / ADDRNOTE
+  op                  SLOT / RENAME / ALIAS / NEWASSET / ADDRNOTE / RELFIX / CLEAR
   municipality_id     対象自治体（全行で同一であること）
   asset_id            既存の資産ID。新規は NEW:<正規名>（決定的採番）
   name                RENAME: 新しい正規名 / NEWASSET: 正規名 / ALIAS: 追加する別名
@@ -23,12 +23,18 @@
                       NEWASSET: 必須（実在と所在の根拠）
                       ADDRNOTE: address_original だけ必須（既存資産の住所注記を、この文言に置き換える。master と relation の notes の address= の部分だけを直し、
                       旧い文言は ADDRESS_NOTE_UPDATED の記録として残す。名称・種別・関係・枠・別名は変えない）
+                      RELFIX: 既存資産の関係を REGIONAL_CONTEXT から SELF_RESOURCE に訂正する（新しい SELF の行を追記し、旧い行は SUPERSEDED。追記ツールと同じ扱い）。
+                      address_original・address_municipality（対象自治体と一致）・official_evidence_url・evidence_kind が必須。
+  slot                CLEAR: 空にする枠の番号（名称・関係・出典を消し、promotion_reason=NO_ELIGIBLE_CANDIDATE の空の枠にする。asset_id は空でよい）。
+                      SLOT と CLEAR を合わせて、現行の埋まっている枠を全て 1 回ずつ指定する（すでに空の枠は省略してよい）。埋まった枠は先頭から連続していること。
   audit_ref, president_confirmation_ref   全行で必須（人が記入。空なら不採用）
+  ※ 住所・URL・承認番号などの自由記入欄に、区切り文字 '|' や制御文字を含めてはならない（notes の区切りが壊れるため）。
 """
 from __future__ import annotations
 
 import argparse
 import csv
+import datetime
 import hashlib
 import json
 import re
@@ -58,7 +64,8 @@ def sha(p: Path) -> str:
 
 
 def rd(p: Path) -> pd.DataFrame:
-    return pd.read_csv(p, encoding="utf-8-sig", dtype=str).fillna("")
+    # "NA" "null" "None" などの文字列を欠損値に変えない（keep_default_na=False）。変えると変更検査が見逃す
+    return pd.read_csv(p, encoding="utf-8-sig", dtype=str, keep_default_na=False, na_filter=False)
 
 
 def bare(m: str) -> str:
@@ -71,6 +78,11 @@ def pre(m: str) -> str:
 
 def norm(s: str) -> str:
     return s.replace(" ", "").replace("　", "")
+
+
+def bad_note_text(v: str) -> bool:
+    """notes の区切り ' | ' を壊す文字・制御文字を含むか（H2）。"""
+    return "|" in v or any(ord(c) < 32 or ord(c) == 127 for c in v)
 
 
 def new_asset_id(mid: str, name: str) -> str:
@@ -99,12 +111,21 @@ def main():
     ap.add_argument("--version", required=True)
     ap.add_argument("--now", required=True)
     a = ap.parse_args()
+    if not re.fullmatch(r"\d+\.\d+\.\d+", a.version):
+        raise Stop(f"--version は 1.5.57 の形で指定する（フォルダを作る前に検査）: {a.version}")
+    try:
+        datetime.datetime.fromisoformat(a.now)
+    except ValueError:
+        raise Stop(f"--now は ISO 形式（例 2026-11-20T12:00:00+09:00）で指定する: {a.now}")
 
     base, stage = Path(a.baseline_root), Path(a.stage_root)
     if base.resolve() in stage.resolve().parents or stage.resolve() == base.resolve():
         raise Stop("stage-root が baseline の中にある")
-    if stage.exists():
-        raise Stop(f"stage-root が既に存在する: {stage}")
+    tmp_stage = stage.with_name(stage.name + ".tmp")
+    failed_stage = stage.with_name(stage.name + ".FAILED")
+    for q in (stage, tmp_stage, failed_stage):
+        if q.exists():
+            raise Stop(f"stage-root（または作業中・失敗の残り）が既に存在する: {q}")
     if not a.measured_names and not a.allow_no_measured:
         raise Stop("--measured-names が必須（試験時のみ --allow-no-measured）")
 
@@ -131,8 +152,16 @@ def main():
         for c in ("audit_ref", "president_confirmation_ref"):
             if not r[c].strip():
                 raise Stop(f"{c} が空（人が記入する。このツールは採番しない）: 行{i + 2}")
-        if r["op"] not in ("SLOT", "RENAME", "ALIAS", "NEWASSET", "ADDRNOTE"):
+        if r["op"] not in ("SLOT", "RENAME", "ALIAS", "NEWASSET", "ADDRNOTE", "RELFIX", "CLEAR"):
             raise Stop(f"op が不正: {r['op']}")
+        if r["op"] != "CLEAR" and not r["asset_id"].strip():
+            raise Stop(f"asset_id が空（CLEAR 以外は必須）: 行{i + 2}")
+        for c in ("address_original", "official_evidence_url", "audit_ref", "president_confirmation_ref"):
+            if c in spec.columns and bad_note_text(r[c]):
+                raise Stop(f"{c} に区切り文字 '|' または制御文字がある（notes が壊れる）: 行{i + 2}")
+    dup_ops = spec[spec.op.isin(["RENAME", "ADDRNOTE", "RELFIX"])].duplicated(["op", "asset_id"], keep=False)
+    if dup_ops.any():
+        raise Stop("同じ資産に同じ操作（RENAME / ADDRNOTE / RELFIX）を 2 回指定している")
 
     names = None
     if a.measured_names:
@@ -196,6 +225,56 @@ def main():
         rel2 = pd.concat([rel2, pd.DataFrame([rrow])], ignore_index=True)
         diff.append(["relation", mun, aid, "(新行)", "", f"SELF_RESOURCE/ACTIVE municipality_id={mun}", eid])
 
+    # ---- 1b. RELFIX（関係の訂正: REGIONAL_CONTEXT → SELF_RESOURCE。新しい SELF 行を追記し、旧行は SUPERSEDED）----
+    relfix_assets = set()
+    for _, r in spec[spec.op == "RELFIX"].iterrows():
+        aid = r["asset_id"].strip()
+        m = master2[master2.asset_id == aid]
+        if len(m) != 1:
+            problems.append(f"RELFIX: 資産IDがマスターに1件でない: {aid}")
+            continue
+        x = m.iloc[0]
+        if x.asset_status != "ACTIVE" or x.verification_status != "VERIFIED":
+            problems.append(f"RELFIX: ACTIVE/VERIFIED でない: {aid}")
+            continue
+        miss = [c for c in ("address_original", "address_municipality", "official_evidence_url", "evidence_kind") if not r[c].strip()]
+        if miss:
+            problems.append(f"RELFIX の必須項目が空 {x.canonical_name}: {miss}")
+            continue
+        if r["address_municipality"].strip() != mnames[mun]:
+            problems.append(f"RELFIX {x.canonical_name}: 住所の所在自治体が対象と一致しない: {r['address_municipality']} / {mnames[mun]}")
+            continue
+        if r["evidence_kind"].strip() not in ("APA_REASON", "APPEARANCE_CANDIDATE"):
+            problems.append(f"RELFIX {x.canonical_name}: evidence_kind が不正")
+            continue
+        if names is not None and x.canonical_name not in names:
+            problems.append(f"RELFIX {x.canonical_name}: 測定で確認できた固有名詞にない")
+            continue
+        cur_r = rel2[(rel2.asset_id == aid) & (rel2.municipality_id.map(bare) == bare(mun)) & (rel2.relation_status == "ACTIVE")]
+        if len(cur_r) != 1:
+            problems.append(f"RELFIX: 対象自治体の有効な関係行が1件でない: {aid} {len(cur_r)}件")
+            continue
+        if cur_r.iloc[0].relation_type == "SELF_RESOURCE":
+            problems.append(f"RELFIX: すでに有効な SELF_RESOURCE（訂正は不要）: {aid}")
+            continue
+        if cur_r.iloc[0].relation_type != "REGIONAL_CONTEXT":
+            problems.append(f"RELFIX: REGIONAL_CONTEXT 以外（{cur_r.iloc[0].relation_type}）は対象外: {aid}")
+            continue
+        eid = evid(aid, r["audit_ref"])
+        i = cur_r.index[0]
+        old_notes = rel2.loc[i, "notes"]
+        rel2.loc[i, "relation_status"] = "SUPERSEDED"
+        rel2.loc[i, "notes"] = old_notes + f" | SUPERSEDED_BY={eid}"
+        diff.append(["relation", mun, aid, "relation_status(旧行)", "ACTIVE", "SUPERSEDED", f"旧行 relation_type={rel2.loc[i, 'relation_type']}"])
+        diff.append(["relation", mun, aid, "notes(旧行)", old_notes, rel2.loc[i, "notes"], ""])
+        nrow = {c: "" for c in rel2.columns}
+        nrow.update(asset_id=aid, municipality_id=cur_r.iloc[0].municipality_id, relation_type="SELF_RESOURCE", verification_status="VERIFIED", is_primary="TRUE",
+                    evidence_id=eid, relation_status="ACTIVE", original_asset_id=aid, original_relation_type="SELF_RESOURCE", updated_at=now,
+                    notes=f"AUDITED_RELFIX | audit={r['audit_ref']} | president={r['president_confirmation_ref']} | address={r['address_original']} | url={r['official_evidence_url']}")
+        rel2 = pd.concat([rel2, pd.DataFrame([nrow])], ignore_index=True)
+        diff.append(["relation", mun, aid, "(新行)", "", f"SELF_RESOURCE/ACTIVE municipality_id={nrow['municipality_id']}", eid])
+        relfix_assets.add(aid)
+
     # ---- 2. RENAME（ID維持・旧名を別名へ）----
     renamed = {}
     for _, r in spec[spec.op == "RENAME"].iterrows():
@@ -235,6 +314,10 @@ def main():
         diff.append(["master", mun, aid, "canonical_name_normalized", x.canonical_name_normalized, norm(new), ""])
         diff.append(["master", mun, aid, "notes", x.notes, master2.loc[i, "notes"], ""])
         renamed[aid] = (old, new)
+        for si in slots2[slots2.common_asset_id == aid].index:   # 枠の名称も同時に直す（M2）
+            if slots2.loc[si, "canonical_name"] != new:
+                diff.append(["slot", mun, aid, f"display_slot={slots2.loc[si, 'display_slot']}:canonical_name", slots2.loc[si, "canonical_name"], new, f"audit={r['audit_ref']}"])
+                slots2.loc[si, "canonical_name"] = new
         if not ((alias2.alias == old) & (alias2.asset_id == aid) & (alias2.alias_status == "ACTIVE")).any():
             row = {c: "" for c in alias2.columns}
             row.update(asset_id=aid, alias=old, alias_scope="MUNICIPALITY", municipality_id=mun, context_rule="resolved_single_canonical",
@@ -307,6 +390,10 @@ def main():
         if ma.iloc[0].asset_status != "ACTIVE":
             problems.append(f"ALIAS: ACTIVE でない資産: {aid}")
             continue
+        vm_a = {pre(v) for v in ma.iloc[0].verified_municipality_ids.replace("|", ";").split(";") if v} | {pre(ma.iloc[0].primary_municipality_id)}
+        if mun not in vm_a:
+            problems.append(f"ALIAS: 対象自治体に属さない資産: {aid} {sorted(vm_a)}")
+            continue
         if not al or norm(al) == ma.iloc[0].canonical_name_normalized:
             problems.append(f"ALIAS: 別名が空または正規名と同一: {al}")
             continue
@@ -332,13 +419,20 @@ def main():
     cur["_n"] = cur.display_slot.astype(int)
     cur = cur.sort_values("_n")
     want = spec[spec.op == "SLOT"].copy()
-    if len(want):
+    clr = spec[spec.op == "CLEAR"].copy()
+    if len(want) or len(clr):
         try:
             want["_n"] = want.slot.astype(int)
+            clr["_n"] = clr.slot.astype(int)
         except ValueError:
             raise Stop("slot は整数で指定する")
-        if sorted(want._n) != sorted(cur._n):
-            problems.append(f"SLOT: 全枠を指定する（現行の枠 {sorted(cur._n)} / 指定 {sorted(want._n)}）")
+        spec_n = sorted(list(want._n) + list(clr._n))
+        filled_n = sorted(int(n) for n, a in zip(cur._n, cur.common_asset_id) if a != "")
+        if len(spec_n) != len(set(spec_n)):
+            problems.append(f"SLOT/CLEAR: 同じ枠を複数回指定している（指定 {spec_n}）")
+        if not set(filled_n) <= set(spec_n) or not set(spec_n) <= set(cur._n):
+            problems.append(f"SLOT/CLEAR: 埋まっている枠は全て指定し、存在しない枠は指定しない（埋まっている枠 {filled_n} / 指定 {spec_n}）")
+        cur_n = set(cur._n)
         if want.asset_id.map(resolve).duplicated().any():
             problems.append("SLOT: 同じ資産を複数の枠に指定している")
         for _, r in want.sort_values("_n").iterrows():
@@ -357,6 +451,9 @@ def main():
                 continue
             idx = cur[cur.common_asset_id == aid]
             n = int(r["_n"])
+            if n not in cur_n:
+                problems.append(f"SLOT: 存在しない枠番号 {n}")
+                continue
             slot_idx = slots2[(slots2.municipality_id == mun) & (slots2.display_slot == str(n))].index[0]
             if len(idx):
                 row = idx.iloc[0].drop(labels=["_n"]).to_dict()
@@ -383,6 +480,26 @@ def main():
                 slots2.loc[slot_idx, c] = row[c]
                 if str(old_row[c]) != str(row[c]):
                     diff.append(["slot", mun, aid, f"display_slot={n}:{c}", old_row[c], row[c], f"audit={r['audit_ref']}"])
+        for _, r in clr.sort_values("_n").iterrows():
+            n = int(r["_n"])
+            if n not in cur_n:
+                problems.append(f"CLEAR: 存在しない枠番号 {n}")
+                continue
+            slot_idx = slots2[(slots2.municipality_id == mun) & (slots2.display_slot == str(n))].index[0]
+            old_row = slots2.loc[slot_idx].to_dict()
+            if old_row["common_asset_id"] == "":
+                problems.append(f"CLEAR: 枠 {n} はすでに空")
+                continue
+            row = {c: "" for c in SLOT_COLS}
+            row.update(municipality_id=mun, municipality_name=mnames[mun], display_slot=str(n), promotion_reason="NO_ELIGIBLE_CANDIDATE")
+            for c in SLOT_COLS:
+                slots2.loc[slot_idx, c] = row[c]
+                if str(old_row[c]) != str(row[c]):
+                    diff.append(["slot", mun, old_row["common_asset_id"], f"display_slot={n}:{c}", old_row[c], row[c], f"audit={r['audit_ref']} CLEAR"])
+        fin = slots2[slots2.municipality_id == mun].assign(_n=lambda d: d.display_slot.astype(int)).sort_values("_n")
+        flags = [x != "" for x in fin.common_asset_id]
+        if flags != sorted(flags, reverse=True):
+            problems.append("SLOT/CLEAR: 埋まった枠が先頭から連続していない")
     # 枠にない資産の改名は、他の枠に影響しないことを回帰で確認する
 
     # ---- 回帰検査 ----
@@ -398,6 +515,11 @@ def main():
     nb = slots2[slots2.common_asset_id != ""]
     chk["non_self_slots"] = int((nb.relation_type != "SELF_RESOURCE").sum())
     chk["baseline_non_self_slots"] = int((slots[slots.common_asset_id != ""].relation_type != "SELF_RESOURCE").sum())
+    # 対象自治体以外の非 SELF 枠は変わらない。対象自治体の非 SELF 枠は増えない（SELF の資産に入れ替えたり空にしたりして減るのは可）
+    nb_out, base_out = nb[nb.municipality_id != mun], slots[(slots.common_asset_id != "") & (slots.municipality_id != mun)]
+    chk["non_self_outside_target_same"] = int((nb_out.relation_type != "SELF_RESOURCE").sum()) == int((base_out.relation_type != "SELF_RESOURCE").sum())
+    nb_t, base_t = nb[nb.municipality_id == mun], slots[(slots.common_asset_id != "") & (slots.municipality_id == mun)]
+    chk["target_non_self_slots_not_increased"] = int((nb_t.relation_type != "SELF_RESOURCE").sum()) <= int((base_t.relation_type != "SELF_RESOURCE").sum())
     tier_rank = {t: i for i, t in enumerate(TIERS)}
     t = slots2[slots2.municipality_id == mun].assign(_n=lambda d: d.display_slot.astype(int)).sort_values("_n")
     tt = [tier_rank[x] for x in t.source_tier if x in tier_rank]
@@ -412,8 +534,11 @@ def main():
     chk["alias_old_rows_identical"] = bool(alias2.iloc[: len(alias)].equals(alias))
     rcols = [c for c in rel.columns if c not in ("notes", "updated_at")]
     rold = rel2.iloc[: len(rel)]
-    chk["relation_old_rows_identical"] = bool(rold[rcols].equals(rel[rcols])
-                                              and set(rold.loc[~rold.eq(rel).all(axis=1), "asset_id"]) <= addr_assets)
+    fixrow = rold.asset_id.isin(relfix_assets) & (rold.municipality_id.map(bare) == bare(mun))   # RELFIX の旧行（状態と notes だけ変わってよい）
+    rcols_fix = [c for c in rcols if c != "relation_status"]
+    chk["relation_old_rows_identical"] = bool(rold.loc[~fixrow, rcols].equals(rel.loc[~fixrow, rcols])
+                                              and rold.loc[fixrow, rcols_fix].equals(rel.loc[fixrow, rcols_fix])
+                                              and set(rold.loc[~rold.eq(rel).all(axis=1), "asset_id"]) <= (addr_assets | relfix_assets))
     # 指定した資産以外の行が master / relation / alias で変わっていない（新規行を含む）。aiv_release_build.py が確認する項目
     spec_assets = {resolve(x) for x in spec.asset_id}
     outside = set()
@@ -426,7 +551,7 @@ def main():
     chk["problems"] = len(problems)
     chk["baseline_unchanged"] = {k: sha(p) for k, p in f.items()} == before
     passed = (not problems and chk["dup_asset_within_municipality"] == 0 and not chk["changed_outside_target"]
-              and chk["slot_rows_same_as_baseline"] and chk["non_self_slots"] == chk["baseline_non_self_slots"]
+              and chk["slot_rows_same_as_baseline"] and chk["non_self_outside_target_same"] and chk["target_non_self_slots_not_increased"]
               and not chk["changed_outside_spec"] and chk["target_tier_order_monotone"] and chk["master_old_rows_changed_only_rename"] and chk["master_dup_ids"] == 0
               and chk["master_dup_names"] == 0 and chk["alias_old_rows_identical"] and chk["relation_old_rows_identical"]
               and chk["baseline_unchanged"])
@@ -437,17 +562,17 @@ def main():
         for _, s in slots[slots.canonical_name == old].iterrows():
             impact.append({"asset_id": aid, "old_name": old, "new_name": new, "municipality_id": s.municipality_id, "display_slot": s.display_slot})
 
-    stage.mkdir(parents=True)
+    tmp_stage.mkdir(parents=True)   # 作業用の名前で書き、最後に stage-root へ改名する（途中で失敗しても stage-root は作られない）
     ver = a.version.replace(".", "_")
 
     def wr(name, df):
-        df.to_csv(stage / name, index=False, encoding="utf-8-sig", lineterminator="\n")
+        df.to_csv(tmp_stage / name, index=False, encoding="utf-8-sig", lineterminator="\n")
 
     wr(f"common_tourism_asset_master_{ver}_stage.csv", master2)
     wr(f"common_asset_municipality_relation_{ver}_stage.csv", rel2)
     wr(f"common_tourism_asset_alias_{ver}_stage.csv", alias2)
     wr(f"diagnostic_selector_v{ver}_formal_slots_stage.csv", slots2[SLOT_COLS])
-    with (stage / "expected_diff.csv").open("w", encoding="utf-8-sig", newline="") as fh:
+    with (tmp_stage / "expected_diff.csv").open("w", encoding="utf-8-sig", newline="") as fh:
         w = csv.writer(fh)
         w.writerow(["file", "municipality_id", "asset_id", "field", "before", "after", "note"])
         w.writerows(diff)
@@ -456,9 +581,10 @@ def main():
     summary = {"version": a.version, "now": a.now, "status": "PASS" if passed else "FAIL", "target": mun, "checks": chk, "problems": problems,
                "diff_rows": len(diff), "baseline_sha256": before,
                "note": "stageのみ。expected_diff.csv を人が全件確認し承認するまで次へ進まない。正式ポインタ・Gate・PPTXは未変更。"}
-    (stage / "validation.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
-    man = {p.name: sha(p) for p in sorted(stage.iterdir()) if p.name != "manifest.json"}
-    (stage / "manifest.json").write_text(json.dumps(man, ensure_ascii=False, indent=2), encoding="utf-8")
+    (tmp_stage / "validation.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    man = {p.name: sha(p) for p in sorted(tmp_stage.iterdir()) if p.name != "manifest.json"}
+    (tmp_stage / "manifest.json").write_text(json.dumps(man, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp_stage.rename(stage)
     print(json.dumps({"status": summary["status"], "diff_rows": len(diff), "problems": problems, "stage": str(stage)}, ensure_ascii=False))
     print("STOP: expected_diff.csv の全件確認と承認が必要（このツールは承認を判断しない）")
     if not passed:

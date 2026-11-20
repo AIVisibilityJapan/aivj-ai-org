@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""無償レポート一括作成（追記型）。設計: 文書/設計/無償レポート一括作成スクリプト設計案.md
+"""無償レポート一括作成（追記型・入れ替え型）。設計: 文書/設計/無償レポート一括作成スクリプト設計案.md
 
-既存ツールを順に呼ぶだけで、既存ツールは変更しない。本番（正式データ）を変えるのは approve2 の切替だけ。
+既存ツールを順に呼ぶだけで、既存ツールは変更しない。枠の入れ替え・関係の訂正・枠を空にする自治体（笠置町など）は、追記指定の代わりに
+入れ替え指定（aiv_resource_reorder_v1.py。op=SLOT/RENAME/ALIAS/NEWASSET/ADDRNOTE/RELFIX/CLEAR）を置く（1 回の実行に追記か入れ替えのどちらか一方。1 自治体専用）。本番（正式データ）を変えるのは approve2 の切替だけ。
 承認番号は社長が指定した値をそのまま使う（採番しない）。結果の要約は、浅いフォルダ
 `データ/private/一時保存/一括_{実行ID}/要約_{段階}.md` に書く。
 
   py scripts\\aiv_free_report_pipeline.py prepare  --run-name 名前 --muni 自治体名:都道府県 [--muni …]
-  py scripts\\aiv_free_report_pipeline.py stage    --run 実行ID [--ledger … --candidates … --append-spec … --measured …]
+  py scripts\\aiv_free_report_pipeline.py stage    --run 実行ID [--ledger … --candidates … --append-spec … | --reorder-spec … --measured …]
   py scripts\\aiv_free_report_pipeline.py approve1 --run 実行ID      （実行ID フォルダの 承認番号.csv を読む）
   py scripts\\aiv_free_report_pipeline.py approve2 --run 実行ID
 
@@ -183,7 +184,7 @@ def spec_paths(ctx, st, a):
     d = ctx.wk / "追記指定"; pre = st["run_name"]
     pick = lambda arg, suffix: Path(arg) if arg else d / f"{pre}_{suffix}.csv"
     return {"ledger": pick(a.ledger, "レビュー台帳"), "candidates": pick(a.candidates, "抽出候補"),
-            "append": pick(a.append_spec, "追記指定"), "measured": pick(a.measured, "測定固有名詞")}
+            "append": pick(a.append_spec, "追記指定"), "reorder": pick(a.reorder_spec, "並べ替え指定"), "measured": pick(a.measured, "測定固有名詞")}
 
 
 def cmd_stage(ctx, a):
@@ -226,19 +227,25 @@ def cmd_stage(ctx, a):
                 raise Stop(f"{mid}: 台帳チェックが解除可でない（{reasons}）")
     # 追記 stage（空なら作らない）
     app_dirs = []; append_rows = []
-    if sp["append"].exists():
-        _, append_rows = rd(sp["append"])
+    if sp["append"].exists() and sp["reorder"].exists():
+        raise Stop("追記指定と入れ替え指定が両方あります（1 回の実行はどちらか一方）。")
+    kind, tool, spec_file = (("reorder", "aiv_resource_reorder_v1.py", sp["reorder"]) if sp["reorder"].exists()
+                             else ("append", "aiv_resource_append_v2.py", sp["append"]))
+    if spec_file.exists():
+        _, append_rows = rd(spec_file)
     version = bump_patch(st["versions"]["selector"])
     now = datetime.datetime.now(JST).replace(microsecond=0).isoformat()
     spec_munis = sorted({mid_norm(r["municipality_id"]) for r in append_rows})
+    if kind == "reorder" and len(spec_munis) > 1:
+        raise Stop(f"入れ替え指定は 1 自治体専用です: {spec_munis}")
     app_summary = []
     if append_rows:
         if not sp["measured"].exists():
             raise Stop(f"測定固有名詞がありません: {sp['measured']}")
         for tag in ("a", "b"):
             d = first_free(rd_ / f"append_{tag}"); app_dirs.append(d)
-            ctx.sh("aiv_resource_append_v2.py", ["--baseline-root", base, "--spec-file", sp["append"], "--measured-names", sp["measured"],
-                                               "--stage-root", d, "--version", version, "--now", now, "--strict"], logs)
+            ctx.sh(tool, ["--baseline-root", base, "--spec-file", spec_file, "--measured-names", sp["measured"],
+                          "--stage-root", d, "--version", version, "--now", now] + (["--strict"] if kind == "append" else []), logs)
         if tree_hashes(app_dirs[0]) != tree_hashes(app_dirs[1]):
             raise Stop("同じ指定で 2 回作った追記 stage の出力が一致しません")
         v = json.loads((app_dirs[0] / "validation.json").read_text(encoding="utf-8"))
@@ -251,8 +258,8 @@ def cmd_stage(ctx, a):
         _, diff = rd(app_dirs[0] / "expected_diff.csv")
         by = {}
         for r in diff:
-            if r["file"] == "slot" and r["field"].endswith(":canonical_name") and r["after"]:
-                by.setdefault(r["municipality_id"], []).append(f"{r['field'].split(':')[0]}→{r['after']}")
+            if r["file"] == "slot" and r["field"].endswith(":canonical_name"):
+                by.setdefault(r["municipality_id"], []).append(f"{r['field'].split(':')[0]}→{r['after'] or '（空）'}")
         app_summary = [f"  - {m}: " + "、".join(by.get(m, ["（枠の変更なし）"])) for m in spec_munis]
         cnt = {}
         for r in diff:
@@ -260,9 +267,10 @@ def cmd_stage(ctx, a):
         app_summary.append(f"  - 差分 {len(diff)} 行（{cnt}）、新規資産 {v['checks'].get('new_assets')}、基準の変更なし {v['checks'].get('baseline_unchanged')}")
     st.update({"phase": "stage_done", "baseline": str(base), "ledger_check": str(lc), "gate_targets": targets,
                "append_stage": str(app_dirs[0]) if app_dirs else None, "append_version": version if app_dirs else None,
-               "now": now, "ledger_ids": ids, "spec": {k: str(v) for k, v in sp.items()}, "spec_munis": spec_munis})
+               "now": now, "ledger_ids": ids, "spec": {k: str(v) for k, v in sp.items()}, "spec_munis": spec_munis,
+               "stage_kind": kind if app_dirs else None, "spec_file": str(spec_file) if app_dirs else None})
     save_state(ctx, run_id, st)
-    lines = [f"- 版（予定）: selector {version}", f"- 追記する自治体（{len(spec_munis)}）:"] + (app_summary or ["  - なし"])
+    lines = [f"- 版（予定）: selector {version}", f"- {'入れ替える' if kind == 'reorder' else '追記する'}自治体（{len(spec_munis)}）:"] + (app_summary or ["  - なし"])
     lines += [f"- Gate 解除の対象（{len(targets)}）: " + "、".join(targets)] + [f"- {n}" for n in notes]
     lines += ["- 同じ指定で 2 回作った追記 stage の出力は一致" if app_dirs else "- 追記 stage なし",
               "", f"次: 社長が差分を確認。承認番号を `{ctx.run_dir(run_id)}\\承認番号.csv`（municipality_id,ref1,ref_gate,ref_switch）にして `approve1 --run {run_id}`。",
@@ -298,7 +306,7 @@ def cmd_approve1(ctx, a):
     refs = read_refs(ctx, st, need)
     # 追記指定の確認番号が ref1 と一致すること
     if st["append_stage"]:
-        _, rows = rd(Path(st["spec"]["append"]))
+        _, rows = rd(Path(st.get("spec_file") or st["spec"]["append"]))
         for r in rows:
             m = mid_norm(r["municipality_id"])
             if r["president_confirmation_ref"] != refs[m]["ref1"]:
@@ -438,7 +446,7 @@ def main(argv=None):
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("prepare"); p.add_argument("--run-name", required=True); p.add_argument("--muni", action="append", required=True)
     p = sub.add_parser("stage"); p.add_argument("--run", required=True)
-    for k in ("ledger", "candidates", "append-spec", "measured"):
+    for k in ("ledger", "candidates", "append-spec", "reorder-spec", "measured"):
         p.add_argument("--" + k)
     for c in ("approve1", "approve2"):
         sub.add_parser(c).add_argument("--run", required=True)

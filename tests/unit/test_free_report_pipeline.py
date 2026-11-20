@@ -269,3 +269,59 @@ def test_approve2_blocks_when_formal_changed(tmp_path, monkeypatch):
     (fr / "gate.csv").write_text("changed\n", encoding="utf-8")
     assert run(root, fr, "approve2", "--run", rid) == 3
     assert not (tmp_path / "switch.log").exists()
+
+
+# ---- 入れ替え型（第 2 版） ----
+STUB_REORDER = STUB_APPEND.replace("a = ap.parse_args()", "a = ap.parse_args()\nimport os as _o\nif _o.environ.get('STUB_ARGS_LOG'): Path(_o.environ['STUB_ARGS_LOG']).write_text(' '.join(sys.argv), encoding='utf-8')", 1) \
+    .replace('munis[0], extra)', 'munis[0], extra)') + ""
+STUB_REORDER = STUB_REORDER.replace(",,資源,%s", ",資源A,,%s")  # 旧: 空→資源。入れ替えでは 資源A→（空）にする
+STUB_REORDER = STUB_REORDER.replace("display_slot=1:canonical_name", "display_slot=2:canonical_name")
+
+
+def reorder_env(tmp_path, monkeypatch, with_append=False, two_munis=False):
+    root, fr, rid = prepared(tmp_path)
+    (root / "scripts" / "aiv_resource_reorder_v1.py").write_text(STUB_REORDER, encoding="utf-8")
+    d = root / "データ/private/06-STEP4作業/資源確認/追記指定"
+    ok = "2026第1回3Q-100001-20261120"
+    rows = f"municipality_id,asset_id,president_confirmation_ref\nMUNI_100001,X,{ok}\n" + ("MUNI_100003,Y,%s\n" % ok if two_munis else "")
+    (d / "テスト_並べ替え指定.csv").write_text(rows, encoding="utf-8-sig")
+    if not with_append:
+        (d / "テスト_追記指定.csv").unlink()
+    monkeypatch.setenv("STUB_ARGS_LOG", str(tmp_path / "args.log"))
+    return root, fr, rid
+
+
+def test_reorder_stage_ok_uses_reorder_tool_without_strict(tmp_path, monkeypatch):
+    root, fr, rid = reorder_env(tmp_path, monkeypatch)
+    assert run(root, fr, "stage", "--run", rid) == 0
+    args = (tmp_path / "args.log").read_text(encoding="utf-8")
+    assert "--strict" not in args and "--baseline-root" in args
+    st = json.loads((root / f"データ/private/06-STEP4作業/資源確認/一括/{rid}/state.json").read_text(encoding="utf-8"))
+    assert st["stage_kind"] == "reorder" and st["spec_munis"] == ["MUNI_100001"] and st["append_stage"]
+    summ = (root / f"データ/private/一時保存/一括_{rid}/要約_stage.md").read_text(encoding="utf-8")
+    assert "入れ替える自治体" in summ and "display_slot=2→（空）" in summ
+
+
+def test_reorder_and_append_both_present_stops(tmp_path, monkeypatch):
+    root, fr, rid = reorder_env(tmp_path, monkeypatch, with_append=True)
+    assert run(root, fr, "stage", "--run", rid) == 3
+    assert "どちらか一方" in (root / f"データ/private/一時保存/一括_{rid}/要約_stage.md").read_text(encoding="utf-8")
+
+
+def test_reorder_two_municipalities_stops(tmp_path, monkeypatch):
+    root, fr, rid = reorder_env(tmp_path, monkeypatch, two_munis=True)
+    assert run(root, fr, "stage", "--run", rid) == 3
+    assert "1 自治体専用" in (root / f"データ/private/一時保存/一括_{rid}/要約_stage.md").read_text(encoding="utf-8")
+
+
+def test_reorder_flow_through_approve2(tmp_path, monkeypatch):
+    root, fr, rid = reorder_env(tmp_path, monkeypatch)
+    add_release_stubs(root)
+    monkeypatch.setenv("STUB_LOG", str(tmp_path / "switch.log")); monkeypatch.setenv("STUB_REPORT_DIR", str(tmp_path / "reports"))
+    assert run(root, fr, "stage", "--run", rid) == 0
+    d = root / f"データ/private/06-STEP4作業/資源確認/一括/{rid}"
+    ok = "2026第1回3Q-100001-20261120"
+    (d / "承認番号.csv").write_text(f"municipality_id,ref1,ref_gate,ref_switch\nMUNI_100001,{ok},{ok}-2,{ok}-3\n", encoding="utf-8-sig")
+    assert run(root, fr, "approve1", "--run", rid) == 0
+    assert run(root, fr, "approve2", "--run", rid) == 0
+    assert (tmp_path / "switch.log").read_text(encoding="utf-8") == f"{ok}-3"
