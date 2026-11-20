@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -95,9 +96,10 @@ def spec(env, rows, name="spec.csv"):
 
 
 def run(env, sp, stage="stage", version="1.0.2", now="2026-11-20T10:00:00"):
-    return subprocess.run([sys.executable, "-I", str(SCRIPT), "--baseline-root", str(env / "base"), "--spec-file", str(sp),
+    return subprocess.run([sys.executable, "-I", "-X", "utf8", str(SCRIPT), "--baseline-root", str(env / "base"), "--spec-file", str(sp),
                            "--measured-names", str(env / "names.csv"), "--stage-root", str(env / stage), "--version", version, "--now", now],
-                          capture_output=True, text=True, encoding="utf-8")
+                          capture_output=True, text=True, encoding="utf-8", errors="replace",
+                          env={**os.environ, "PYTHONIOENCODING": "utf-8"})
 
 
 def rows(p):
