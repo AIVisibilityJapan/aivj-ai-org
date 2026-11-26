@@ -23,7 +23,7 @@
                       NEWASSET: 必須（実在と所在の根拠）
                       ADDRNOTE: address_original だけ必須（既存資産の住所注記を、この文言に置き換える。master と relation の notes の address= の部分だけを直し、
                       旧い文言は ADDRESS_NOTE_UPDATED の記録として残す。名称・種別・関係・枠・別名は変えない）
-                      RELFIX: 既存資産の関係を REGIONAL_CONTEXT から SELF_RESOURCE に訂正する（新しい SELF の行を追記し、旧い行は SUPERSEDED。追記ツールと同じ扱い）。
+                      RELFIX: 既存資産の関係を REGIONAL_CONTEXT または BROAD_AREA（D-090・2026-11-27 追加）から SELF_RESOURCE に訂正する（新しい SELF の行を追記し、旧い行は SUPERSEDED。追記ツールと同じ扱い）。
                       address_original・address_municipality（対象自治体と一致）・official_evidence_url・evidence_kind が必須。
   slot                CLEAR: 空にする枠の番号（名称・関係・出典を消し、promotion_reason=NO_ELIGIBLE_CANDIDATE の空の枠にする。asset_id は空でよい）。
                       SLOT と CLEAR を合わせて、現行の埋まっている枠を全て 1 回ずつ指定する（すでに空の枠は省略してよい）。埋まった枠は先頭から連続していること。
@@ -257,8 +257,8 @@ def main():
         if cur_r.iloc[0].relation_type == "SELF_RESOURCE":
             problems.append(f"RELFIX: すでに有効な SELF_RESOURCE（訂正は不要）: {aid}")
             continue
-        if cur_r.iloc[0].relation_type != "REGIONAL_CONTEXT":
-            problems.append(f"RELFIX: REGIONAL_CONTEXT 以外（{cur_r.iloc[0].relation_type}）は対象外: {aid}")
+        if cur_r.iloc[0].relation_type not in ("REGIONAL_CONTEXT", "BROAD_AREA"):   # 2026-11-27 D-090: 山・川・渓谷の BROAD_AREA も訂正対象
+            problems.append(f"RELFIX: REGIONAL_CONTEXT / BROAD_AREA 以外（{cur_r.iloc[0].relation_type}）は対象外: {aid}")
             continue
         eid = evid(aid, r["audit_ref"])
         i = cur_r.index[0]

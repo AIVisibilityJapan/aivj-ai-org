@@ -223,3 +223,31 @@ def test_existing_stage_refused_and_no_tmp_left(env):
 def test_alias_must_belong_to_target_municipality(env):
     sp = spec(env, [dict(op="ALIAS", asset_id="A_W", name="別名")])
     assert run(env, sp).returncode != 0
+
+def _set_relation_type(env, aid, rtype):
+    p = env / "base" / "common_asset_municipality_relation_v1_0_1.csv"
+    rs = rows(p)
+    for r in rs:
+        if r["asset_id"] == aid:
+            r["relation_type"] = rtype
+    w(p, REL, rs)
+
+
+def test_relfix_broad_area_pass(env):
+    """D-090（2026-11-27）: 山・川・渓谷などの BROAD_AREA も SELF_RESOURCE に訂正できる。"""
+    _set_relation_type(env, "A_Z", "BROAD_AREA")
+    sp = spec(env, [RELFIX, dict(op="SLOT", asset_id="A_Z", slot="1", source_tier="APA_RESOURCE", source_record_ids="C1"), dict(op="CLEAR", slot="2")])
+    r = run(env, sp)
+    assert r.returncode == 0, r.stdout
+    rel = rows(next((env / "stage").glob("common_asset_municipality_relation_*_stage.csv")))
+    z = [x for x in rel if x["asset_id"] == "A_Z"]
+    assert [x["relation_status"] for x in z] == ["SUPERSEDED", "ACTIVE"] and z[1]["relation_type"] == "SELF_RESOURCE"
+    assert z[0]["relation_type"] == "BROAD_AREA"
+
+
+def test_relfix_other_relation_type_rejected(env):
+    _set_relation_type(env, "A_Z", "MULTI_MUNICIPALITY")
+    sp = spec(env, [RELFIX, dict(op="SLOT", asset_id="A_Z", slot="1", source_tier="APA_RESOURCE", source_record_ids="C1"), dict(op="CLEAR", slot="2")])
+    r = run(env, sp)
+    assert r.returncode != 0
+    assert "REGIONAL_CONTEXT / BROAD_AREA 以外" in r.stdout
