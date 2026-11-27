@@ -22,6 +22,7 @@
 
 | 日付 | 変更 |
 |---|---|
+| 2026-11-27 | aiv_resource_append_v2.py に、既存の広域資産へ所属自治体を追加する操作（指定CSVの extend_municipality=1。変更はマスターの verified_municipality_ids・notes・updated_at のみ）を追加。試験 4 件追加（tests/unit/test_resource_append_extend.py）。木津川市・南山城村・京田辺市・精華町・井手町・久御山町の切替を一括作成スクリプトで実施（D-092） |
 | 2026-11-27 | aiv_resource_reorder_v1.py の RELFIX を BROAD_AREA にも対応（D-090）。試験 2 件追加（21 件合格）。京都府南部 5 自治体の切替を一括作成スクリプトで実施（D-091） |
 | 2026-11-20 | aiv_free_report_pipeline.py 第 2 版: 入れ替え指定（aiv_resource_reorder_v1.py）に対応 |
 | 2026-11-20 | aiv_resource_reorder_v1.py に CLEAR・RELFIX を追加し、NA の保持・`|` 拒否・版/時刻の検査などを修正。tests/unit/test_resource_reorder.py を追加 |

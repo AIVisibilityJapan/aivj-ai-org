@@ -10,6 +10,10 @@
                 (4) 新規資産の作成（asset_id 列に NEW と書き、new_resource_subtype を指定。master に1行追記し、
                     ID は "AIV_COMMON_ASSET_PREFLIGHT_" + sha256(自治体ID|正規名)[:20] の決定的採番。既存の正規名と
                     重複する場合・測定の固有名詞に無い場合・サブタイプ未指定の場合は不採用）
+               (5) 既存の広域資産への所属自治体の追加（extend_municipality=1。D-092・2026-11-27 追加）
+                    マスターの verified_municipality_ids に対象自治体を追記し（旧値の並びは保つ）、notes に追記記録を残す。
+                    変わってよいのは対象資産の verified_municipality_ids / notes / updated_at の3列だけ。
+                    測定の固有名詞・住所の所在自治体・資産の ACTIVE/VERIFIED は通常どおり検査する。
   ※ 並べ替えは未対応。採用が3件に満たない場合、空きスロットはそのまま空（表示は「―」）。
 """
 from __future__ import annotations
@@ -26,7 +30,7 @@ import pandas as pd
 
 REQUIRED = ["municipality_id", "asset_id", "measured_name", "existence_status", "address_original", "address_municipality",
             "official_evidence_url", "evidence_kind", "source_record_ids", "audit_ref", "president_confirmation_ref"]
-OPTIONAL = ["alias", "relation_type_to", "new_resource_subtype", "new_resource_type"]
+OPTIONAL = ["alias", "relation_type_to", "new_resource_subtype", "new_resource_type", "extend_municipality"]
 SLOT_COLS = ["municipality_id", "municipality_name", "display_slot", "common_asset_id", "canonical_name", "source_tier", "source_namespace",
              "source_record_id", "appearance_candidate_rank", "apa_source_information", "dedup_reason", "promotion_reason", "resource_scope",
              "relation_type", "relation_status", "relation_evidence_id", "verification_status", "asset_status"]
@@ -100,7 +104,8 @@ def check_row(r, master, alias, rel, spec_names, municipality_names):
         if a.asset_status != "ACTIVE" or a.verification_status != "VERIFIED":
             why.append(f"資産が ACTIVE/VERIFIED でない: {a.asset_status}/{a.verification_status}")
         if bare(m) not in [bare(x) for x in a.verified_municipality_ids.replace("|", ";").split(";") if x] + [bare(a.primary_municipality_id)]:
-            why.append("マスター上の所属自治体に対象が含まれない")
+            if str(r.get("extend_municipality", "")).strip() != "1":
+                why.append("マスター上の所属自治体に対象が含まれない（広域資産へ追加するなら extend_municipality=1）")
         mn = r["measured_name"].strip()
         same = {a.canonical_name, r["alias"].strip() if r.get("alias") else ""} | set(alias[(alias.asset_id == r["asset_id"]) & (alias.alias_status == "ACTIVE")].alias)
         same -= {""}
@@ -228,6 +233,20 @@ def main():
                         notes=f"AUDITED_NEW_ASSET | audit={r['audit_ref']} | president={r['president_confirmation_ref']} | address={r['address_original']} | url={r['official_evidence_url']}")
             master2 = pd.concat([master2, pd.DataFrame([nrow])], ignore_index=True)
             diff.append(["master", m, aid, "(新行)", "", f"{nm} subtype={nrow['resource_subtype']} primary={m}", eid])
+        # (0) 広域資産への所属自治体の追加
+        if r.get("_new") != "1" and str(r.get("extend_municipality", "")).strip() == "1":
+            mi = master2.index[master2.asset_id == aid][0]
+            cur_ids = [x for x in master2.loc[mi, "verified_municipality_ids"].replace(";", "|").split("|") if x]
+            prim = master2.loc[mi, "primary_municipality_id"]
+            if bare(m) not in [bare(x) for x in cur_ids] + [bare(prim)]:
+                fmt_pre = any(x.startswith("MUNI_") for x in cur_ids) or (not cur_ids and prim.startswith("MUNI_"))
+                old_v, old_n = master2.loc[mi, "verified_municipality_ids"], master2.loc[mi, "notes"]
+                master2.loc[mi, "verified_municipality_ids"] = "|".join(cur_ids + [pre(m) if fmt_pre else bare(m)])
+                master2.loc[mi, "notes"] = (old_n + " | " if old_n else "") + f"EXTENDED_MUNI={bare(m)} | audit={r['audit_ref']} | president={r['president_confirmation_ref']}"
+                master2.loc[mi, "updated_at"] = now
+                diff.append(["master", m, aid, "verified_municipality_ids", old_v, master2.loc[mi, "verified_municipality_ids"], eid])
+                diff.append(["master", m, aid, "notes", old_n, master2.loc[mi, "notes"], eid])
+                diff.append(["master", m, aid, "updated_at", "", now, eid])
         # (1) 関係の訂正
         cur = rel2[(rel2.asset_id == aid) & (rel2.municipality_id.map(bare) == bare(m)) & (rel2.relation_status == "ACTIVE")]
         if len(cur) and (cur.relation_type == "SELF_RESOURCE").any():
@@ -302,7 +321,15 @@ def main():
     checks["relation_changed_cols_only_status_notes"] = bool(ch is None or len(ch) == 0 or set(c[0] for c in ch.columns) <= {"relation_status", "notes"})
     n_new = len(master2) - len(master)
     checks["new_assets"] = n_new
-    checks["master_old_rows_identical"] = bool(master2.iloc[: len(master)].equals(master))
+    ext_assets = {r["asset_id"] for r in ok_rows if r.get("_new") != "1" and str(r.get("extend_municipality", "")).strip() == "1"}
+    m_old = master2.iloc[: len(master)].reset_index(drop=True)
+    if m_old.equals(master):
+        checks["master_old_rows_identical"] = True
+    else:
+        chm = m_old.compare(master)
+        chg_assets = set(master.loc[chm.index, "asset_id"])
+        chg_cols = {c[0] for c in chm.columns}
+        checks["master_old_rows_identical"] = bool(chg_assets <= ext_assets and chg_cols <= {"verified_municipality_ids", "notes", "updated_at"})
     checks["master_dup_ids"] = int(master2.asset_id.duplicated().sum())
     checks["master_dup_names"] = int(master2.canonical_name_normalized.duplicated().sum() - master.canonical_name_normalized.duplicated().sum())
     checks["alias_old_rows_identical"] = bool(alias2.iloc[: len(alias)].equals(alias))
@@ -334,7 +361,7 @@ def main():
     def wr(name, df):
         df.to_csv(stage / name, index=False, encoding="utf-8-sig", lineterminator="\n")
 
-    if len(master2) != len(master):
+    if not master2.equals(master):
         wr(f"common_tourism_asset_master_{ver}_stage.csv", master2)
     wr(f"common_asset_municipality_relation_{ver}_stage.csv", rel2)
     wr(f"common_tourism_asset_alias_{ver}_stage.csv", alias2)
