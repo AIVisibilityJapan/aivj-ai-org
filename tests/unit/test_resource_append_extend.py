@@ -91,3 +91,45 @@ def test_address_municipality_mismatch_rejected(tmp_path):
     base = _base(tmp_path); spec, meas = _spec(tmp_path, muni="木津川市")
     r = _run(tmp_path, base, spec, meas)
     assert r.returncode == 1
+
+
+def test_na_like_strings_in_other_rows_preserved(tmp_path):
+    base = _base(tmp_path)
+    mp = base / "common_tourism_asset_master_v1_1_1.csv"
+    m = pd.read_csv(mp, dtype=str, keep_default_na=False)
+    m.loc[m.asset_id == "A_OTHER", "notes"] = "NA"
+    m.to_csv(mp, index=False, encoding="utf-8-sig")
+    spec, meas = _spec(tmp_path)
+    r = _run(tmp_path, base, spec, meas)
+    assert r.returncode == 0, r.stdout + r.stderr
+    out = pd.read_csv(next((tmp_path / "stage").glob("common_tourism_asset_master_*_stage.csv")), dtype=str, keep_default_na=False)
+    assert out[out.asset_id == "A_OTHER"].iloc[0].notes == "NA"
+
+
+def test_semicolon_separator_normalized(tmp_path):
+    base = _base(tmp_path, verified="262145;263648"); spec, meas = _spec(tmp_path)
+    r = _run(tmp_path, base, spec, meas)
+    assert r.returncode == 0, r.stdout + r.stderr
+    m = pd.read_csv(next((tmp_path / "stage").glob("common_tourism_asset_master_*_stage.csv")), dtype=str, keep_default_na=False)
+    assert m[m.asset_id == "A_RIVER"].iloc[0].verified_municipality_ids == "262145|263648|262111"
+
+
+def test_pipe_in_audit_ref_rejected(tmp_path):
+    base = _base(tmp_path); spec, meas = _spec(tmp_path)
+    s = pd.read_csv(spec, dtype=str, keep_default_na=False); s.loc[0, "audit_ref"] = "A|B"
+    s.to_csv(spec, index=False, encoding="utf-8-sig")
+    r = _run(tmp_path, base, spec, meas)
+    assert r.returncode == 1 and "区切り文字" in r.stdout
+
+
+def test_diff_records_old_updated_at(tmp_path):
+    base = _base(tmp_path)
+    mp = base / "common_tourism_asset_master_v1_1_1.csv"
+    m = pd.read_csv(mp, dtype=str, keep_default_na=False)
+    m.loc[m.asset_id == "A_RIVER", "updated_at"] = "2026-01-01T00:00:00+09:00"
+    m.to_csv(mp, index=False, encoding="utf-8-sig")
+    spec, meas = _spec(tmp_path)
+    r = _run(tmp_path, base, spec, meas)
+    assert r.returncode == 0, r.stdout + r.stderr
+    txt = "".join(f.read_text(encoding="utf-8-sig") for f in (tmp_path / "stage").glob("*diff*.csv"))
+    assert "updated_at,2026-01-01T00:00:00+09:00,2026-11-27" in txt

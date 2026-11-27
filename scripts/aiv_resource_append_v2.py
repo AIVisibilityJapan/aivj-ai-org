@@ -12,8 +12,11 @@
                     重複する場合・測定の固有名詞に無い場合・サブタイプ未指定の場合は不採用）
                (5) 既存の広域資産への所属自治体の追加（extend_municipality=1。D-092・2026-11-27 追加）
                     マスターの verified_municipality_ids に対象自治体を追記し（旧値の並びは保つ）、notes に追記記録を残す。
+                    広域資産に限らず、実在確認済みの既存資産なら指定できる（所属の追加は監査・社長確認の記録つきで行う）。
+                    verified_municipality_ids の区切りは ';' も '|' に正規化して書き戻す。
                     変わってよいのは対象資産の verified_municipality_ids / notes / updated_at の3列だけ。
                     測定の固有名詞・住所の所在自治体・資産の ACTIVE/VERIFIED は通常どおり検査する。
+  ※ 既存の関係が BROAD_AREA の資産は本ツールでは訂正しない（不採用）。reorder_v1 の RELFIX は BROAD_AREA も受け付ける。
   ※ 並べ替えは未対応。採用が3件に満たない場合、空きスロットはそのまま空（表示は「―」）。
 """
 from __future__ import annotations
@@ -45,7 +48,8 @@ def sha(p: Path) -> str:
 
 
 def rd(p: Path) -> pd.DataFrame:
-    return pd.read_csv(p, encoding="utf-8-sig", dtype=str).fillna("")
+    # "NA" "null" 等の文字列を欠損扱いにしない（他資産の行が黙って空になるのを防ぐ）
+    return pd.read_csv(p, encoding="utf-8-sig", dtype=str, keep_default_na=False, na_filter=False)
 
 
 def bare(mid: str) -> str:
@@ -70,6 +74,12 @@ def check_row(r, master, alias, rel, spec_names, municipality_names):
     for c in REQUIRED:
         if not str(r.get(c, "")).strip():
             why.append(f"必須項目が空: {c}")
+    if why:
+        return why
+    for c in ("address_original", "official_evidence_url", "audit_ref", "president_confirmation_ref"):
+        v = str(r.get(c, ""))
+        if "|" in v or any(ord(ch) < 32 or ord(ch) == 127 for ch in v):
+            why.append(f"{c} に区切り文字 '|' または制御文字がある（notes が壊れる）")
     if why:
         return why
     if r["existence_status"].strip() != "確認済み":
@@ -240,13 +250,13 @@ def main():
             prim = master2.loc[mi, "primary_municipality_id"]
             if bare(m) not in [bare(x) for x in cur_ids] + [bare(prim)]:
                 fmt_pre = any(x.startswith("MUNI_") for x in cur_ids) or (not cur_ids and prim.startswith("MUNI_"))
-                old_v, old_n = master2.loc[mi, "verified_municipality_ids"], master2.loc[mi, "notes"]
+                old_v, old_n, old_u = master2.loc[mi, "verified_municipality_ids"], master2.loc[mi, "notes"], master2.loc[mi, "updated_at"]
                 master2.loc[mi, "verified_municipality_ids"] = "|".join(cur_ids + [pre(m) if fmt_pre else bare(m)])
                 master2.loc[mi, "notes"] = (old_n + " | " if old_n else "") + f"EXTENDED_MUNI={bare(m)} | audit={r['audit_ref']} | president={r['president_confirmation_ref']}"
                 master2.loc[mi, "updated_at"] = now
                 diff.append(["master", m, aid, "verified_municipality_ids", old_v, master2.loc[mi, "verified_municipality_ids"], eid])
                 diff.append(["master", m, aid, "notes", old_n, master2.loc[mi, "notes"], eid])
-                diff.append(["master", m, aid, "updated_at", "", now, eid])
+                diff.append(["master", m, aid, "updated_at", old_u, now, eid])
         # (1) 関係の訂正
         cur = rel2[(rel2.asset_id == aid) & (rel2.municipality_id.map(bare) == bare(m)) & (rel2.relation_status == "ACTIVE")]
         if len(cur) and (cur.relation_type == "SELF_RESOURCE").any():
